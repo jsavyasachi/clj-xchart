@@ -37,3 +37,51 @@
 (defspec transpose-map-is-involutory-ish
   (prop/for-all [series-map nonempty-category-series-map-gen]
     (= series-map (c/transpose-map (c/transpose-map series-map)))))
+
+;; Characterization tests for the XChart 4.x interop. The reflective styler /
+;; series / export calls only fail at runtime, so these build one of every
+;; chart type with rich styling and render every output format, asserting we
+;; get non-trivial bytes back. This is the regression net for the 3.2 -> 4.0.1
+;; port.
+
+(defn- renders-all-formats? [chart]
+  (every? (fn [fmt] (pos? (count (c/to-bytes chart fmt))))
+          [:png :gif :bmp :jpg :svg :pdf :eps]))
+
+(deftest xy-chart-renders
+  (is (renders-all-formats?
+       (c/xy-chart {"series" {:x [1 2 3] :y [4 5 6]
+                              :style {:marker-type :circle :marker-color :blue
+                                      :line-style :dash-dash :line-width 2
+                                      :render-style :line :show-in-legend? true}}}
+                   {:title "xy" :theme :matlab :render-style :line
+                    :annotations? true
+                    :x-axis {:title "x" :title-style {:visible? true}}
+                    :y-axis {:title "y"}}))))
+
+(deftest category-chart-renders
+  (is (renders-all-formats?
+       (c/category-chart {"a" {"x" 1.0 "y" 2.0} "b" {"x" 3.0 "y" 4.0}}
+                         {:title "cat" :theme :ggplot2 :render-style :bar
+                          :stacked? true :available-space-fill 0.9
+                          :annotations? true}))))
+
+(deftest pie-chart-renders
+  (doseq [atype [:label :label-and-percentage :percentage :value :name-and-value]]
+    (is (renders-all-formats?
+         (c/pie-chart {"a" 30 "b" 50 "c" 20}
+                      {:title "pie" :circular? true :annotation-type atype
+                       :draw-all-annotations? true}))
+        (str "pie annotation-type " atype))))
+
+(deftest bubble-chart-renders
+  (is (renders-all-formats?
+       (c/bubble-chart {"b" {:x [1 2 3] :y [4 5 6] :bubble [10 20 30]}}
+                       {:in :max :out [20 :px]}
+                       {:title "bubble" :theme :xchart}))))
+
+(deftest legend-position-and-alignment
+  (is (renders-all-formats?
+       (c/xy-chart {"s" {:x [1 2] :y [3 4]}}
+                   {:legend {:position :inside-nw}
+                    :x-axis {:title "x" :title-style {:alignment :right}}}))))
