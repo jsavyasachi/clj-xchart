@@ -1,6 +1,6 @@
-(defproject com.hypirion/clj-xchart "0.3.0-SNAPSHOT"
+(defproject net.clojars.savya/clj-xchart "0.3.0"
   :description "XChart wrapper for Clojure"
-  :url "https://github.com/hyPiRion/clj-xchart"
+  :url "https://github.com/jsavyasachi/clj-xchart"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.12.0"]
@@ -8,8 +8,11 @@
   :source-paths ["src/clj"]
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-codox "0.10.8"]]
-  :deploy-repositories [["releases" :clojars]]
-  :codox {:source-uri "https://github.com/hyPiRion/clj-xchart/blob/{version}/{filepath}#L{line}"}
+  :deploy-repositories [["releases" {:url "https://repo.clojars.org"
+                                     :username :env/clojars_username
+                                     :password :env/clojars_password
+                                     :sign-releases false}]]
+  :codox {:source-uri "https://github.com/jsavyasachi/clj-xchart/blob/{version}/{filepath}#L{line}"}
   :profiles {:dev {:dependencies [[org.clojure/test.check "1.1.1"]]}
              :clojure-1-10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
              :clojure-1-11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
