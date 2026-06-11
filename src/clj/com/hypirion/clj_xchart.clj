@@ -2,10 +2,7 @@
   (:refer-clojure :exclude [spit])
   (:require [clojure.set :as set]
             [clojure.string :as s])
-  (:import (de.erichseifert.vectorgraphics2d SVGGraphics2D
-                                             PDFGraphics2D
-                                             EPSGraphics2D)
-           (org.knowm.xchart BubbleChart
+  (:import (org.knowm.xchart BubbleChart
                              XYChart
                              PieChart
                              CategoryChart
@@ -15,15 +12,21 @@
                              XYSeries$XYSeriesRenderStyle
                              XChartPanel
                              BitmapEncoder
-                             BitmapEncoder$BitmapFormat)
+                             BitmapEncoder$BitmapFormat
+                             VectorGraphicsEncoder
+                             VectorGraphicsEncoder$VectorGraphicsFormat)
            (org.knowm.xchart.style Styler
                                    AxesChartStyler
+                                   AxesChartStyler$TextAlignment
                                    Styler$LegendPosition
-                                   Styler$TextAlignment
-                                   PieStyler$AnnotationType
-                                   GGPlot2Theme
-                                   MatlabTheme
-                                   XChartTheme)
+                                   XYStyler
+                                   CategoryStyler
+                                   PieStyler
+                                   PieStyler$LabelType
+                                   BubbleStyler)
+           (org.knowm.xchart.style.theme GGPlot2Theme
+                                         MatlabTheme
+                                         XChartTheme)
            (org.knowm.xchart.style.markers Circle
                                            Diamond
                                            None
@@ -31,7 +34,7 @@
                                            TriangleDown
                                            TriangleUp)
            (org.knowm.xchart.style.lines SeriesLines)
-           (java.io FileOutputStream)
+           (java.io ByteArrayOutputStream FileOutputStream)
            (java.awt Color
                      GridLayout)
            (javax.swing JPanel
@@ -109,10 +112,13 @@
 
 (def pie-annotation-types
   "The different annotation types you can use to annotate pie charts.
-  By default, this is :percentage."
-  {:label PieStyler$AnnotationType/Label
-   :label-and-percentage PieStyler$AnnotationType/LabelAndPercentage
-   :percentage PieStyler$AnnotationType/Percentage})
+  By default, this is :percentage. (XChart renamed AnnotationType to
+  LabelType in 4.x; :label maps to the slice name.)"
+  {:label PieStyler$LabelType/Name
+   :label-and-percentage PieStyler$LabelType/NameAndPercentage
+   :percentage PieStyler$LabelType/Percentage
+   :value PieStyler$LabelType/Value
+   :name-and-value PieStyler$LabelType/NameAndValue})
 
 (def category-render-styles
   "The different styles you can use for category series."
@@ -129,9 +135,9 @@
 
 (def text-alignments
   "The different kinds of text alignments you can use."
-  {:centre Styler$TextAlignment/Centre
-   :left Styler$TextAlignment/Left
-   :right Styler$TextAlignment/Right})
+  {:centre AxesChartStyler$TextAlignment/Centre
+   :left AxesChartStyler$TextAlignment/Left
+   :right AxesChartStyler$TextAlignment/Right})
 
 (def legend-positions
   "The different legend positions. Note that xchart implements only a
@@ -242,10 +248,18 @@
 (defn- set-default-style!
   [^Styler styler
    {:keys [annotations-font annotations? chart plot legend series]}]
+  ;; XChart 4.x renamed "annotations" to "labels" and moved them off the base
+  ;; Styler onto the pie/category stylers, so route there when applicable.
+  (when (instance? PieStyler styler)
+    (doto-cond ^PieStyler styler
+      annotations-font (.setLabelsFont annotations-font)
+      (not (nil? annotations?)) (.setLabelsVisible (boolean annotations?))))
+  (when (instance? CategoryStyler styler)
+    (doto-cond ^CategoryStyler styler
+      annotations-font (.setLabelsFont annotations-font)
+      (not (nil? annotations?)) (.setLabelsVisible (boolean annotations?))))
   (doto-cond
    styler
-   annotations-font (.setAnnotationsFont annotations-font)
-   (not (nil? annotations?)) (.setHasAnnotations (boolean annotations?))
    chart (set-chart-style! chart)
    legend (set-legend! legend)
    plot (set-plot-style! plot)
@@ -279,7 +293,7 @@
    styler
    font (.setAxisTitleFont font)
    padding (.setAxisTitlePadding (int padding))
-   (not (nil? visible?)) (.setAxisTitleVisible (boolean visible?))))
+   (not (nil? visible?)) (.setAxisTitlesVisible (boolean visible?))))
 
 (defn- set-axis-plot!
   [^AxesChartStyler styler
@@ -424,7 +438,7 @@
    (let [chart (XYChart. width height)
          styling (attach-default-font styling)]
      (doto-cond
-      (.getStyler chart)
+      ^XYStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
       render-style (.setDefaultSeriesRenderStyle (xy-render-styles render-style)))
      (doseq [[s-name data] series]
@@ -478,7 +492,7 @@
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto-cond
-      (.getStyler chart)
+      ^CategoryStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
       render-style (.setDefaultSeriesRenderStyle (category-render-styles render-style))
       available-space-fill (.setAvailableSpaceFill (double available-space-fill))
@@ -598,7 +612,7 @@
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto-cond
-      (.getStyler chart)
+      ^BubbleStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
       render-style (.setDefaultSeriesRenderStyle (bubble-render-styles render-style)))
      (doto (.getStyler chart)
@@ -697,21 +711,20 @@
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto-cond
-      (.getStyler chart)
+      ^PieStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
       render-style (.setDefaultSeriesRenderStyle (pie-render-styles render-style))
       (not (nil? circular?)) (.setCircular (boolean circular?))
-      (not (nil? draw-all-annotations?)) (.setDrawAllAnnotations (boolean draw-all-annotations?))
-      annotation-distance (.setAnnotationDistance (double annotation-distance))
+      (not (nil? draw-all-annotations?)) (.setForceAllLabelsVisible (boolean draw-all-annotations?))
+      annotation-distance (.setLabelsDistance (double annotation-distance))
       donut-thickness (.setDonutThickness (double donut-thickness))
       start-angle (.setStartAngleInDegrees (double start-angle))
-      annotation-type (.setAnnotationType (pie-annotation-types annotation-type)))
+      annotation-type (.setLabelType (pie-annotation-types annotation-type)))
      (set-default-style! (.getStyler chart) styling)
+     ;; Pie charts have no axes in XChart 4.x, so they take only a title.
      (doto-cond
       chart
-      title (.setTitle title)
-      (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
-      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
+      title (.setTitle title)))))
 
 (defn as-buffered-image
   "Converts a chart into a java.awt.image.BufferedImage."
@@ -726,9 +739,9 @@
    :jpeg BitmapEncoder$BitmapFormat/JPG})
 
 (def ^:private vector-formats
-  {:pdf #(PDFGraphics2D. 0.0 0.0 %1 %2)
-   :svg #(SVGGraphics2D. 0.0 0.0 %1 %2)
-   :eps #(EPSGraphics2D. 0.0 0.0 %1 %2)})
+  {:pdf VectorGraphicsEncoder$VectorGraphicsFormat/PDF
+   :svg VectorGraphicsEncoder$VectorGraphicsFormat/SVG
+   :eps VectorGraphicsEncoder$VectorGraphicsFormat/EPS})
 
 (defn to-bytes
   "Converts a chart into a byte array."
@@ -736,9 +749,9 @@
    (if-let [bitmap-format (bitmap-formats type)]
      (BitmapEncoder/getBitmapBytes chart bitmap-format)
      (if-let [vector-format (vector-formats type)]
-       (let [g (vector-format (.getWidth chart) (.getHeight chart))]
-         (.paint chart g (.getWidth chart) (.getHeight chart))
-         (.getBytes g))
+       (let [out (ByteArrayOutputStream.)]
+         (VectorGraphicsEncoder/saveVectorGraphic chart out vector-format)
+         (.toByteArray out))
        (throw (IllegalArgumentException. (str "Unknown format: " type)))))))
 
 (defn view
