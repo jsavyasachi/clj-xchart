@@ -6,6 +6,9 @@
                              XYChart
                              PieChart
                              CategoryChart
+                             XYSeries
+                             CategorySeries
+                             BubbleSeries
                              BubbleSeries$BubbleSeriesRenderStyle
                              CategorySeries$CategorySeriesRenderStyle
                              PieSeries$PieSeriesRenderStyle
@@ -166,7 +169,9 @@
     (when cond2 (my2 #2 call2)))"
   [expr & clauses]
   (let [pairs (partition 2 clauses)
-        expr-sym (gensym "expr")]
+        ;; carry any ^Tag hint on expr onto the binding so the doto-style
+        ;; method calls resolve without reflection
+        expr-sym (with-meta (gensym "expr") (meta expr))]
     `(let [~expr-sym ~expr]
        ~@(map (fn [[cond clause]]
                 `(when ~cond
@@ -375,6 +380,9 @@
      y-axis (set-y-axis-style! y-axis))))
 
 (defn- add-raw-series
+  ;; addSeries is intentionally reflective: chart is one of several types and
+  ;; XChart exposes ~12 addSeries overloads (double[]/float[]/int[]/List), so we
+  ;; rely on runtime dispatch to accept whatever numeric collection is passed.
   ([chart s-name x-data y-data]
    (.addSeries chart s-name x-data y-data))
   ([chart s-name x-data y-data error-bars]
@@ -412,6 +420,7 @@
                     line-color line-style line-width
                     fill-color show-in-legend? render-style]} style]
         (doto-cond
+         ^XYSeries
          (if error-bars
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
@@ -462,6 +471,7 @@
                     line-color line-style line-width
                     fill-color show-in-legend? render-style]} style]
         (doto-cond
+         ^CategorySeries
          (if error-bars
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
@@ -586,7 +596,7 @@
                     line-color line-style line-width
                     fill-color show-in-legend? render-style]} style]
         (doto-cond
-         (add-raw-series chart s-name x y bubble)
+         ^BubbleSeries (add-raw-series chart s-name x y bubble)
          ;; NOTE: Add render style when squares are added to the impl?
          render-style (.setBubbleSeriesRenderStyle (bubble-render-styles render-style))
          line-color (.setLineColor (colors line-color line-color))
@@ -750,7 +760,9 @@
      (BitmapEncoder/getBitmapBytes chart bitmap-format)
      (if-let [vector-format (vector-formats type)]
        (let [out (ByteArrayOutputStream.)]
-         (VectorGraphicsEncoder/saveVectorGraphic chart out vector-format)
+         (VectorGraphicsEncoder/saveVectorGraphic
+          ^org.knowm.xchart.internal.chartpart.Chart chart out
+          ^VectorGraphicsEncoder$VectorGraphicsFormat vector-format)
          (.toByteArray out))
        (throw (IllegalArgumentException. (str "Unknown format: " type)))))))
 
@@ -785,8 +797,8 @@
   ([chart fname]
    (spit chart fname (guess-extension fname)))
   ([chart fname type]
-   (with-open [fos (FileOutputStream. fname)]
-     (.write fos (to-bytes chart type)))))
+   (with-open [fos (FileOutputStream. ^String fname)]
+     (.write fos ^bytes (to-bytes chart type)))))
 
 (defn- transpose-single
   [acc k1 v1]
