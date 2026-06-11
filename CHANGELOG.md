@@ -3,6 +3,11 @@
 All notable changes to this project are documented here. This change log follows
 the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.3.2] - 2026-06-11
+
+### Added
+- Docstrings for the public `bubble-chart` and `normalize-categories`.
+
 ## [0.3.1] - 2026-06-11
 
 ### Fixed

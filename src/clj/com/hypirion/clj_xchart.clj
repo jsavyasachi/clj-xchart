@@ -649,6 +649,12 @@
      series)))
 
 (defn bubble-chart
+  "Returns a bubble chart for `series`, scaling bubble diameters per `size`.
+
+  `size` is a map {:in <number or :max> :out [<value> <unit>]} where the input
+  bubble value `:in` (or :max, the largest value in the series) maps to an
+  output diameter `:out` given in :px/:pixels or :%/:percent of the chart's
+  larger dimension. `styling` accepts the same keys as `bubble-chart*`."
   ([series size]
    (bubble-chart series size {}))
   ([series {in :in [out-val out-type] :out :as bubble-size}
@@ -829,6 +835,9 @@
     (map-vals #(/ % sum) m)))
 
 (defn normalize-categories
+  "Normalizes a category-series map `m` so that every series shares the same set
+  of x-values, filling any missing entries. Useful before handing data to
+  `category-chart`, which expects aligned categories across series."
   [m]
   (->> (transpose-map m)
        (map-vals normalize-group)
