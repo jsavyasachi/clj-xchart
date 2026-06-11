@@ -18,13 +18,13 @@ library for rendering charts/plots.
 Leiningen/Boot:
 
 ```clj
-[net.clojars.savya/clj-xchart "0.3.0"]
+[net.clojars.savya/clj-xchart "0.3.1"]
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.3.0"}
+net.clojars.savya/clj-xchart {:mvn/version "0.3.1"}
 ```
 
 ## What

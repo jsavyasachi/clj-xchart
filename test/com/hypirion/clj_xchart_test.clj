@@ -1,6 +1,7 @@
 (ns com.hypirion.clj-xchart-test
   (:require [clojure.test :refer :all]
             [com.hypirion.clj-xchart :as c]
+            [com.hypirion.clj-xchart.opt :as opt]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -79,6 +80,17 @@
        (c/bubble-chart {"b" {:x [1 2 3] :y [4 5 6] :bubble [10 20 30]}}
                        {:in :max :out [20 :px]}
                        {:title "bubble" :theme :xchart}))))
+
+(deftest opt-namespace-loads-and-maps
+  ;; Guards the src/java ListMapping class: the opt namespace imports it, so a
+  ;; missing :java-source-paths build (or an uncompiled jar) breaks here and in
+  ;; cljdoc, even though the core namespace is unaffected.
+  (let [coll [{:x 1 :y 10} {:x 2 :y 20} {:x 3 :y 30}]
+        series (opt/extract-series {:x :x :y :y} coll)]
+    (is (= [1 2 3] (vec (:x series))))
+    (is (= [10 20 30] (vec (:y series))))
+    ;; the lazy view must render through a real chart end to end
+    (is (pos? (count (c/to-bytes (c/xy-chart {"s" series}) :png))))))
 
 (deftest legend-position-and-alignment
   (is (renders-all-formats?

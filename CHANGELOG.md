@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. This change log follows
 the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.3.1] - 2026-06-11
+
+### Fixed
+- Restore `:java-source-paths`, which had been dropped in 0.3.0. The
+  `com.hypirion.clj-xchart.opt` namespace imports the bundled `ListMapping`
+  Java helper, so the 0.3.0 jar was missing that class and cljdoc analysis
+  failed. The core namespace was unaffected. Added a regression test that
+  exercises the `opt` namespace end to end.
+
 ## [0.3.0] - 2026-06-11
 
 Maintenance fork, published to Clojars as `net.clojars.savya/clj-xchart`. The

@@ -1,4 +1,4 @@
-(defproject net.clojars.savya/clj-xchart "0.3.0"
+(defproject net.clojars.savya/clj-xchart "0.3.1"
   :description "XChart wrapper for Clojure"
   :url "https://github.com/jsavyasachi/clj-xchart"
   :license {:name "Eclipse Public License"
@@ -6,6 +6,8 @@
   :dependencies [[org.clojure/clojure "1.12.0"]
                  [org.knowm.xchart/xchart "4.0.1"]]
   :source-paths ["src/clj"]
+  :java-source-paths ["src/java"]
+  :javac-options ["-Xlint:unchecked"]
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-codox "0.10.8"]]
   :deploy-repositories [["releases" {:url "https://repo.clojars.org"
