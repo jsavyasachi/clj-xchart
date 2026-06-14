@@ -1,4 +1,4 @@
-(defproject net.clojars.savya/clj-xchart "0.3.3"
+(defproject net.clojars.savya/clj-xchart "0.3.4"
   :description "XChart wrapper for Clojure"
   :url "https://github.com/jsavyasachi/clj-xchart"
   :license {:name "Eclipse Public License"
