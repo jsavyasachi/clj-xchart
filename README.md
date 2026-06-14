@@ -14,19 +14,10 @@ library for rendering charts/plots.
 > ported to XChart 4.x / Clojure 1.12 and published to Clojars as
 > `net.clojars.savya/clj-xchart`.
 
-## Installation
+## Stack
 
-Leiningen/Boot:
-
-```clj
-[net.clojars.savya/clj-xchart "0.3.3"]
-```
-
-deps.edn:
-
-```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.3.3"}
-```
+<a href="https://clojure.org"><img src="https://img.shields.io/badge/Clojure-5881D8?style=flat&logo=clojure&logoColor=fff" alt="Clojure" /></a>
+<a href="https://knowm.org/open-source/xchart/"><img src="https://img.shields.io/badge/XChart-4.0.1-4A86E8?style=flat" alt="XChart" /></a>
 
 ## What
 
@@ -41,6 +32,20 @@ clj-xchart wraps all the different charts you can generate in XChart:
 * Donut charts
 * Bubble charts
 * Stick charts
+
+## Installation
+
+Leiningen/Boot:
+
+```clj
+[net.clojars.savya/clj-xchart "0.3.3"]
+```
+
+deps.edn:
+
+```clj
+net.clojars.savya/clj-xchart {:mvn/version "0.3.3"}
+```
 
 ## Usage
 
