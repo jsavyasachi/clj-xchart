@@ -1,9 +1,9 @@
-(defproject net.clojars.savya/clj-xchart "0.3.2"
+(defproject net.clojars.savya/clj-xchart "0.3.3"
   :description "XChart wrapper for Clojure"
   :url "https://github.com/jsavyasachi/clj-xchart"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.12.0"]
+  :dependencies [[org.clojure/clojure "1.12.5"]
                  [org.knowm.xchart/xchart "4.0.1"]]
   :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
@@ -18,5 +18,5 @@
   :profiles {:dev {:dependencies [[org.clojure/test.check "1.1.1"]]}
              :clojure-1-10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
              :clojure-1-11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
-             :clojure-1-12 {:dependencies [[org.clojure/clojure "1.12.0"]]}}
+             :clojure-1-12 {:dependencies [[org.clojure/clojure "1.12.5"]]}}
   :aliases {"all" ["with-profile" "+clojure-1-10:+clojure-1-11:+clojure-1-12"]})

@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. This change log follows
 the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [0.3.3] - 2026-06-13
+
+### Changed
+- Bump default/dev Clojure 1.12.0 -> 1.12.5 (latest patch). Provided scope, no
+  consumer impact; the 1.12 CI cell now exercises the current release.
+
 ## [0.3.2] - 2026-06-11
 
 ### Added
