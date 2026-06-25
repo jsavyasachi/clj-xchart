@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.12.5"]
-                 [org.knowm.xchart/xchart "4.0.1"]]
+                 [org.knowm.xchart/xchart "4.0.2"]]
   :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
   :javac-options ["-Xlint:unchecked"]
@@ -15,7 +15,7 @@
                                      :password :env/clojars_password
                                      :sign-releases false}]]
   :codox {:source-uri "https://github.com/jsavyasachi/clj-xchart/blob/{version}/{filepath}#L{line}"}
-  :profiles {:dev {:dependencies [[org.clojure/test.check "1.1.1"]]}
+  :profiles {:dev {:dependencies [[org.clojure/test.check "1.1.3"]]}
              :clojure-1-10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
              :clojure-1-11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
              :clojure-1-12 {:dependencies [[org.clojure/clojure "1.12.5"]]}}
