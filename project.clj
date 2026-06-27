@@ -1,8 +1,8 @@
 (defproject net.clojars.savya/clj-xchart "0.3.4"
   :description "XChart wrapper for Clojure"
   :url "https://github.com/jsavyasachi/clj-xchart"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "Eclipse Public License 1.0"
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.12.5"]
                  [org.knowm.xchart/xchart "4.0.2"]]
   :source-paths ["src/clj"]
