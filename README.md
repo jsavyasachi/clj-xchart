@@ -3,7 +3,6 @@
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/clj-xchart.svg)](https://clojars.org/net.clojars.savya/clj-xchart)
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/clj-xchart)](https://cljdoc.org/d/net.clojars.savya/clj-xchart/CURRENT)
 [![test](https://github.com/jsavyasachi/clj-xchart/actions/workflows/ci.yml/badge.svg)](https://github.com/jsavyasachi/clj-xchart/actions/workflows/ci.yml)
-[![Renovate](https://img.shields.io/badge/Renovate-enabled-1A1F6C?style=flat&logo=renovate&logoColor=fff)](https://github.com/jsavyasachi/clj-xchart/issues?q=is%3Aissue+Dependency+Dashboard)
 
 Clojure wrapper around [XChart](https://knowm.org/open-source/xchart/), a small
 library for rendering charts/plots.
