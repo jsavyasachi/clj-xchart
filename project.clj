@@ -10,10 +10,10 @@
   :javac-options ["-Xlint:unchecked"]
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-codox "0.10.8"]]
-  :deploy-repositories [["releases" {:url "https://repo.clojars.org"
-                                     :username :env/clojars_username
-                                     :password :env/clojars_password
-                                     :sign-releases false}]]
+  :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
+                                    :username :env/clojars_username
+                                    :password :env/clojars_password
+                                    :sign-releases false}]]
   :codox {:source-uri "https://github.com/jsavyasachi/clj-xchart/blob/{version}/{filepath}#L{line}"}
   :profiles {:dev {:dependencies [[org.clojure/test.check "1.1.3"]]}
              :clojure-1-10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
