@@ -37,13 +37,13 @@ clj-xchart wraps all the different charts you can generate in XChart:
 Leiningen/Boot:
 
 ```clj
-[net.clojars.savya/clj-xchart "0.3.4"]
+[net.clojars.savya/clj-xchart "0.3.5"]
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.3.4"}
+net.clojars.savya/clj-xchart {:mvn/version "0.3.5"}
 ```
 
 ## Usage
