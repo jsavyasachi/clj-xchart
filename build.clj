@@ -9,7 +9,7 @@
             [deps-deploy.deps-deploy :as dd]))
 
 (def lib 'net.clojars.savya/clj-xchart)
-(def version "0.3.5")
+(def version "0.3.6")
 (def class-dir "target/classes")
 (def basis (delay (b/create-basis {:project "deps.edn"})))
 (def jar-file (format "target/%s-%s.jar" (name lib) version))

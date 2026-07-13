@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.3.6] - 2026-07-12
+
+### Changed
+- deps.edn-native build (tools.build; Leiningen via lein-tools-deps).
+
 All notable changes to this project are documented here. This change log follows
 the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
