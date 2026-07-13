@@ -1,7 +1,7 @@
 {:paths ["src/clj"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
-        org.knowm.xchart/xchart {:mvn/version "4.0.2"}}
+        org.knowm.xchart/xchart {:mvn/version "4.0.3"}}
 
  :aliases
  {:test
