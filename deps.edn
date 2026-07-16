@@ -1,7 +1,14 @@
 {:paths ["src/clj"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
-        org.knowm.xchart/xchart {:mvn/version "4.0.3"}}
+        org.knowm.xchart/xchart {:mvn/version "4.0.3"}
+        ;; xchart 4.0.3 makes its exporters optional (no longer transitive), but
+        ;; com.hypirion.clj-xchart loads them at namespace init. Pin the exporter
+        ;; libs it references (versions xchart 4.0.2 bundled); pdfbox/fontbox come
+        ;; in transitively via graphics2d.
+        de.erichseifert.vectorgraphics2d/VectorGraphics2D {:mvn/version "0.13"}
+        de.rototor.pdfbox/graphics2d {:mvn/version "3.0.5"}
+        com.madgag/animated-gif-lib {:mvn/version "1.4"}}
 
  :aliases
  {:test
