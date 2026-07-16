@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.7] - 2026-07-16
+
+### Changed
+- Update XChart to 4.0.3. It no longer pulls its exporters transitively, so
+  VectorGraphics2D (0.13), pdfbox-graphics2d (3.0.5) and animated-gif-lib (1.4)
+  are now declared explicitly.
+
 ## [0.3.6] - 2026-07-12
 
 ### Changed
