@@ -2,7 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/clj-xchart.svg)](https://clojars.org/net.clojars.savya/clj-xchart)
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/clj-xchart)](https://cljdoc.org/d/net.clojars.savya/clj-xchart/CURRENT)
-[![test](https://github.com/jsavyasachi/clj-xchart/actions/workflows/ci.yml/badge.svg)](https://github.com/jsavyasachi/clj-xchart/actions/workflows/ci.yml)
+[![test](https://github.com/jsavyasachi/clj-xchart/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/clj-xchart/actions/workflows/test.yml)
 
 Clojure wrapper around [XChart](https://knowm.org/open-source/xchart/), a small
 library for rendering charts/plots.
@@ -87,7 +87,4 @@ rendering. See `CHANGELOG.md` for details.
 Copyright © 2016 Jean Niklas L'orange.
 
 Maintenance fork (2026) by Savyasachi, original: https://github.com/hyPiRion/clj-xchart.
-Distributed under the [Eclipse Public License 1.0](https://www.eclipse.org/legal/epl-v10.html), preserving the original license.
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the [Eclipse Public License either version 1.0 or (at your option) any later version](https://www.eclipse.org/legal/epl-v10.html), preserving the original project's license.
