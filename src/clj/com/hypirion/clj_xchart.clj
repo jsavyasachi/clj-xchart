@@ -351,15 +351,19 @@
 (defn- set-tooltips!
   [^Styler styler
    {:keys [type background-color border-color font highlight-color
-           always-visible?]}]
-  (doto-cond
-   styler
-   type (.setToolTipType (tooltip-types type type))
-   background-color (.setToolTipBackgroundColor (colors background-color background-color))
-   border-color (.setToolTipBorderColor (colors border-color border-color))
-   font (.setToolTipFont font)
-   highlight-color (.setToolTipHighlightColor (colors highlight-color highlight-color))
-   (not (nil? always-visible?)) (.setToolTipsAlwaysVisible (boolean always-visible?))))
+           always-visible? visible?]
+    :as tooltips}]
+  (let [visible? (if (contains? tooltips :always-visible?)
+                   always-visible?
+                   visible?)]
+    (doto-cond
+     styler
+     type (.setToolTipType (tooltip-types type type))
+     background-color (.setToolTipBackgroundColor (colors background-color background-color))
+     border-color (.setToolTipBorderColor (colors border-color border-color))
+     font (.setToolTipFont font)
+     highlight-color (.setToolTipHighlightColor (colors highlight-color highlight-color))
+     (not (nil? visible?)) (.setToolTipsAlwaysVisible (boolean visible?)))))
 
 (defn- set-annotation-style!
   [^Styler styler {:keys [text line panel]}]

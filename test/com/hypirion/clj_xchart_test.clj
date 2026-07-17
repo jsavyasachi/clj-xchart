@@ -156,7 +156,7 @@
                 :text-anti-alias? false
                 :tooltips {:type :x-labels :background-color :white
                            :border-color :black :font font
-                           :highlight-color :yellow :always-visible? true}
+                           :highlight-color :yellow :visible? true}
                 :y-axis-group-positions {1 :right}
                 :annotation {:text {:font font :font-color :blue}
                              :line {:color :red :stroke :dash-dash}
