@@ -22,31 +22,36 @@ library for rendering charts/plots.
 
 ## What
 
-The current constructors cover:
+The constructors cover XChart 4.0.3's full chart-type set:
 
 * XY charts: line, scatter, area, step, step-area, and polygon-area
 * Category charts: bar, stepped-bar, line, area, scatter, and stick
 * Pie and donut charts
 * Bubble charts
+* OHLC charts: candle, hi-lo, and line
+* Box (box-and-whisker) charts
+* Horizontal bar charts
+* Dial charts
+* Radar charts: polygon and circle
+* Heat-map charts
 
-This release line is expanding parity toward XChart's fuller chart-type set.
-The shared foundation now includes broader marker and render-style keywords,
-accessible and printer-friendly color presets, additional styler options, and
-chart-space or screen-space annotations for axes charts. Existing constructors
-and keyword-based styling remain compatible.
+Alongside the chart types, the keyword-based styling covers the full marker and
+render-style set, accessible and printer-friendly color presets, the current
+XChart styler options, and chart-space or screen-space annotations for axes
+charts. Existing constructors and keyword-based styling remain compatible.
 
 ## Installation
 
 Leiningen/Boot:
 
 ```clj
-[net.clojars.savya/clj-xchart "0.3.8"]
+[net.clojars.savya/clj-xchart "0.4.0"]
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.3.8"}
+net.clojars.savya/clj-xchart {:mvn/version "0.4.0"}
 ```
 
 ## Usage

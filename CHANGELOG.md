@@ -1,5 +1,32 @@
 # Change Log
 
+## [0.4.0] - 2026-07-16
+
+XChart 4.0.3 chart-type + styling parity pass. All additions are backward compatible.
+
+### Added
+- Six new chart types, completing XChart's chart-type set: `ohlc-chart`
+  (candle/hi-lo/line, with x+OHLC, implicit-x OHLC, optional volume, and x/y line
+  shapes), `box-chart` (box-and-whisker, with box-plot calculation method and
+  width), `horizontal-bar-chart`, `dial-chart`, `radar-chart` (polygon/circle,
+  with radii labels and per-series tooltips), and `heat-map-chart` (single-series,
+  piecewise/gradient styling).
+- Fuller keyword coverage in the shared styling foundation: markers (cross, plus,
+  trapezoid, oval, rectangle), XY render styles (step, step-area, polygon-area),
+  category render style (stepped-bar), legend positions (inside-s, outside-s), and
+  OHLC/radar render-style lookups.
+- Accessible and printer-friendly series-color presets (`:color-blind-friendly`,
+  `:printer-friendly`) plus explicit `:series-colors`.
+- Broader styler options across the common, axes, XY, category, and pie stylers
+  (tooltips, legend layout, anti-aliasing, cursor, stacked-sum, clockwise pie,
+  automatic-contrast labels, tick formatters, and more).
+- Chart-space and screen-space annotations for axes charts via `add-annotation!` /
+  `add-annotations!` and an `:annotations` constructor key.
+
+### Fixed
+- Map-style pie series (`{name {:value n :style {...}}}`) referenced an undefined
+  symbol and could not be constructed; this path now works and is covered by tests.
+
 ## [0.3.7] - 2026-07-16
 
 ### Changed
