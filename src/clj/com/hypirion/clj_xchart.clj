@@ -756,6 +756,66 @@
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
       annotations (add-annotations! annotations)))))
 
+;; Box charts
+
+(defn- set-box-style!
+  [^BoxStyler styler
+   {:keys [box-plot-calculation-method box-width-fraction]}]
+  (doto-cond
+   styler
+   box-plot-calculation-method
+   (.setBoxplotCalCulationMethod
+    (case box-plot-calculation-method
+      :n-plus-1 BoxStyler$BoxplotCalCulationMethod/N_PLUS_1
+      :n-less-1 BoxStyler$BoxplotCalCulationMethod/N_LESS_1
+      :np BoxStyler$BoxplotCalCulationMethod/NP
+      :n-less-1-plus-1 BoxStyler$BoxplotCalCulationMethod/N_LESS_1_PLUS_1
+      box-plot-calculation-method))
+   box-width-fraction (.setBoxWidthFraction (double box-width-fraction))))
+
+(extend-type BoxChart
+  Chart
+  (add-series! [chart s-name data]
+    (let [{:keys [values style]} (if (map? data)
+                                   data
+                                   {:values data})
+          {:keys [fill-color show-in-legend?]} style]
+      (doto-cond
+       ^BoxSeries (.addSeries chart ^String s-name ^java.util.List (vec values))
+       style (set-common-series-style! style)
+       fill-color (.setFillColor (colors fill-color fill-color))
+       (not (nil? show-in-legend?))
+       (.setShowInLegend (boolean show-in-legend?))))))
+
+(defn box-chart
+  "Returns a box chart. Each series is a collection of numeric values, or a
+  map containing :values and optional :style entries."
+  ([series]
+   (box-chart series {}))
+  ([series
+    {:keys [width height title theme annotations]
+     :or {width 640 height 500}
+     :as styling}]
+   {:pre [series]}
+   (let [^org.knowm.xchart.style.theme.Theme chart-theme
+         (themes theme (themes :xchart))
+         chart (BoxChart. width height chart-theme)
+         styling (attach-default-font styling)]
+     (doto-cond
+      ^BoxStyler (.getStyler chart)
+      styling (set-box-style! styling))
+     (doseq [[s-name data] series]
+       (add-series! chart s-name data))
+     (doto (.getStyler chart)
+       (set-default-style! styling)
+       (set-axes-style! styling))
+     (doto-cond
+      chart
+      title (.setTitle title)
+      (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
+
 (extend-type CategoryChart
   Chart
   (add-series! [chart s-name data]
