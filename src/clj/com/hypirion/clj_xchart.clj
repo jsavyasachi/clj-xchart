@@ -816,6 +816,68 @@
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
       annotations (add-annotations! annotations)))))
 
+;; Horizontal bar charts
+
+(defn- set-horizontal-bar-style!
+  [^HorizontalBarStyler styler
+   {:keys [available-space-fill bar-label-visible? bar-label-font
+           bar-label-color bar-label-rotation bar-label-position
+           bar-label-automatic-contrast?]}]
+  (doto-cond
+   styler
+   available-space-fill (.setAvailableSpaceFill (double available-space-fill))
+   (not (nil? bar-label-visible?)) (.setLabelsVisible (boolean bar-label-visible?))
+   bar-label-font (.setLabelsFont bar-label-font)
+   bar-label-color (.setLabelsFontColor (colors bar-label-color bar-label-color))
+   bar-label-rotation (.setLabelsRotation (int bar-label-rotation))
+   bar-label-position (.setLabelsPosition (double bar-label-position))
+   (not (nil? bar-label-automatic-contrast?))
+   (.setLabelsFontColorAutomaticEnabled (boolean bar-label-automatic-contrast?))))
+
+(extend-type HorizontalBarChart
+  Chart
+  (add-series! [chart s-name data]
+    (let [{:keys [x y style]} (if (sequential? data)
+                                {:x (first data) :y (second data)}
+                                data)
+          {:keys [fill-color show-in-legend?]} style]
+      (doto-cond
+       ^HorizontalBarSeries
+       (.addSeries chart ^String s-name
+                   ^java.util.List (vec x) ^java.util.List (vec y))
+       style (set-common-series-style! style)
+       fill-color (.setFillColor (colors fill-color fill-color))
+       (not (nil? show-in-legend?))
+       (.setShowInLegend (boolean show-in-legend?))))))
+
+(defn horizontal-bar-chart
+  "Returns a horizontal bar chart. Series x values are numeric bar lengths and
+  y values are category labels."
+  ([series]
+   (horizontal-bar-chart series {}))
+  ([series
+    {:keys [width height title theme annotations]
+     :or {width 640 height 500}
+     :as styling}]
+   {:pre [series]}
+   (let [chart (HorizontalBarChart. width height)
+         styling (attach-default-font styling)]
+     (doto-cond
+      ^HorizontalBarStyler (.getStyler chart)
+      theme (.setTheme (themes theme theme))
+      styling (set-horizontal-bar-style! styling))
+     (doseq [[s-name data] series]
+       (add-series! chart s-name data))
+     (doto (.getStyler chart)
+       (set-default-style! styling)
+       (set-axes-style! styling))
+     (doto-cond
+      chart
+      title (.setTitle title)
+      (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
+
 (extend-type CategoryChart
   Chart
   (add-series! [chart s-name data]
