@@ -5,7 +5,8 @@
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [clojure.test.check.clojure-test :refer [defspec]]))
+            [clojure.test.check.clojure-test :refer [defspec]])
+  (:import (java.awt Font)))
 
 (def category-series-gen
   (gen/map gen/string-ascii (gen/double* {:infinite? false
@@ -139,3 +140,152 @@
       (is (= #{:polygon :circle} (set (keys (var-get radar-var)))))
       (is (= #{:color-blind-friendly :printer-friendly}
              (set (keys (var-get presets-var))))))))
+
+(deftest common-and-axes-styler-options
+  (let [font (Font. Font/SANS_SERIF Font/PLAIN 12)
+        chart (c/xy-chart
+               {"s" {:x [1 2] :y [3 4]
+                     :style {:label "label" :enabled? false :y-axis-group 1
+                             :y-axis-decimal-pattern "0.00" :smooth? true}}}
+               {:font font
+                :chart {:title {:font-color :red}}
+                :legend {:layout :horizontal}
+                :series-colors :printer-friendly
+                :anti-alias? false
+                :text-anti-alias? false
+                :tooltips {:type :x-labels :background-color :white
+                           :border-color :black :font font
+                           :highlight-color :yellow :always-visible? true}
+                :y-axis-group-positions {1 :right}
+                :annotation {:text {:font font :font-color :blue}
+                             :line {:color :red :stroke :dash-dash}
+                             :panel {:background-color :white :border-color :black
+                                     :font font :font-color :green :padding 7}}
+                :x-axis {:max-label-count 3 :tick-label-color :red
+                         :tick-mark-color :blue :tick-label-formatter #(str "x" %)
+                         :logarithmic-decade-only? true
+                         :label {:vertical-alignment :left}}
+                :y-axis {:tick-label-color :green :tick-mark-color :orange
+                         :tick-label-formatter #(str "y" %)
+                         :logarithmic-decade-only? true}
+                :cursor {:color :magenta :line-width 2.5 :font font
+                         :font-color :white :background-color :black
+                         :x-formatter #(str "cx" %) :y-formatter #(str "cy" %)}})
+        styler (.getStyler chart)
+        series (.getSeries chart "s")]
+    (is (= font (.getBaseFont styler)))
+    (is (= (c/colors :red) (.getChartTitleFontColor styler)))
+    (is (= "Horizontal" (str (.getLegendLayout styler))))
+    (is (false? (.getAntiAlias styler)))
+    (is (false? (.getTextAntiAlias styler)))
+    (is (= "xLabels" (str (.getToolTipType styler))))
+    (is (= (c/colors :white) (.getToolTipBackgroundColor styler)))
+    (is (= (c/colors :black) (.getToolTipBorderColor styler)))
+    (is (= font (.getToolTipFont styler)))
+    (is (= (c/colors :yellow) (.getToolTipHighlightColor styler)))
+    (is (.isToolTipsAlwaysVisible styler))
+    (is (= "Right" (str (.getYAxisGroupPosistion styler 1))))
+    (is (= font (.getAnnotationTextFont styler)))
+    (is (= (c/colors :blue) (.getAnnotationTextFontColor styler)))
+    (is (= (c/colors :red) (.getAnnotationLineColor styler)))
+    (is (= (c/strokes :dash-dash) (.getAnnotationLineStroke styler)))
+    (is (= (c/colors :white) (.getAnnotationTextPanelBackgroundColor styler)))
+    (is (= (c/colors :black) (.getAnnotationTextPanelBorderColor styler)))
+    (is (= font (.getAnnotationTextPanelFont styler)))
+    (is (= (c/colors :green) (.getAnnotationTextPanelFontColor styler)))
+    (is (= 7 (.getAnnotationTextPanelPadding styler)))
+    (is (= (seq (c/series-color-presets :printer-friendly))
+           (seq (.getSeriesColors styler))))
+    (is (= 3 (.getXAxisMaxLabelCount styler)))
+    (is (= (c/colors :red) (.getXAxisTickLabelsColor styler)))
+    (is (= (c/colors :blue) (.getXAxisTickMarksColor styler)))
+    (is (= "x2.0" (.apply (.getXAxisTickLabelsFormattingFunction styler) 2.0)))
+    (is (.isXAxisLogarithmicDecadeOnly styler))
+    (is (= "Left" (str (.getXAxisLabelAlignmentVertical styler))))
+    (is (= (c/colors :green) (.getYAxisTickLabelsColor styler)))
+    (is (= (c/colors :orange) (.getYAxisTickMarksColor styler)))
+    (is (= "y3.0" (.apply (.getYAxisTickLabelsFormattingFunction styler) 3.0)))
+    (is (.isYAxisLogarithmicDecadeOnly styler))
+    (is (= (c/colors :magenta) (.getCursorColor styler)))
+    (is (= 2.5 (.getCursorLineWidth styler)))
+    (is (= font (.getCursorFont styler)))
+    (is (= (c/colors :white) (.getCursorFontColor styler)))
+    (is (= (c/colors :black) (.getCursorBackgroundColor styler)))
+    (is (= "cx1.0" (.apply (.getCustomCursorXDataFormattingFunction styler) 1.0)))
+    (is (= "cy4.0" (.apply (.getCustomCursorYDataFormattingFunction styler) 4.0)))
+    (is (= "label" (.getLabel series)))
+    (is (false? (.isEnabled series)))
+    (is (= 1 (.getYAxisGroup series)))
+    (is (= "0.00" (.getYAxisDecimalPattern series)))
+    (is (.isSmooth series))))
+
+(deftest explicit-series-colors
+  (let [styler (.getStyler (c/xy-chart {"s" [[1] [2]]}
+                                       {:series-colors [:red :blue]}))]
+    (is (= [(c/colors :red) (c/colors :blue)]
+           (vec (.getSeriesColors styler))))))
+
+(deftest category-and-series-styler-options
+  (let [chart (c/category-chart*
+               [["s" {:x ["a" "b"] :y [1 2]
+                       :style {:label "category" :enabled? false
+                               :y-axis-group 2 :y-axis-decimal-pattern "0.0"
+                               :smooth? true :overlapped? true}}]]
+               {:show-stack-sum? true :bar-label-color :red
+                :bar-label-rotation 30 :bar-label-position 0.75
+                :overlapped? true :bar-label-automatic-contrast? true
+                :bar-label-automatic-light-color :white
+                :bar-label-automatic-dark-color :black})
+        styler (.getStyler chart)
+        series (.getSeries chart "s")]
+    (is (.isShowStackSum styler))
+    (is (= (c/colors :red) (.getLabelsFontColor styler)))
+    (is (= 30 (.getLabelsRotation styler)))
+    (is (= 0.75 (.getLabelsPosition styler)))
+    (is (.isOverlapped styler))
+    (is (.isLabelsFontColorAutomaticEnabled styler))
+    (is (= (c/colors :white) (.getLabelsFontColorAutomaticLight styler)))
+    (is (= (c/colors :black) (.getLabelsFontColorAutomaticDark styler)))
+    (is (= "category" (.getLabel series)))
+    (is (false? (.isEnabled series)))
+    (is (= 2 (.getYAxisGroup series)))
+    (is (= "0.0" (.getYAxisDecimalPattern series)))
+    (is (.isSmooth series))
+    (is (.isOverlapped series))))
+
+(deftest bubble-series-common-options
+  (let [chart (c/bubble-chart* {"s" {:x [1] :y [2] :bubble [3]
+                                      :style {:label "bubble" :enabled? false
+                                              :y-axis-group 1
+                                              :y-axis-decimal-pattern "0.000"}}})
+        series (.getSeries chart "s")]
+    (is (= "bubble" (.getLabel series)))
+    (is (false? (.isEnabled series)))
+    (is (= 1 (.getYAxisGroup series)))
+    (is (= "0.000" (.getYAxisDecimalPattern series)))))
+
+(deftest pie-styler-options
+  (let [font (Font. Font/SERIF Font/BOLD 14)
+        chart (c/pie-chart
+               {"s" {:value 4 :style {:label "slice" :enabled? false}}}
+               {:sum-visible? true :sum-format "%.1f" :sum-font font
+                :series-label-fn #(.getName %)
+                :label-color :blue :label-automatic-contrast? true
+                :label-automatic-light-color :white
+                :label-automatic-dark-color :black
+                :clockwise-direction :counter-clockwise
+                :slice-border-width 2.5})
+        styler (.getStyler chart)
+        series (.getSeries chart "s")]
+    (is (.isSumVisible styler))
+    (is (= "%.1f" (.getSumFormat styler)))
+    (is (= font (.getSumFont styler)))
+    (is (= "s" (.apply (.getCustomSeriesLabelFunction styler) series)))
+    (is (= (c/colors :blue) (.getLabelsFontColor styler)))
+    (is (.isLabelsFontColorAutomaticEnabled styler))
+    (is (= (c/colors :white) (.getLabelsFontColorAutomaticLight styler)))
+    (is (= (c/colors :black) (.getLabelsFontColorAutomaticDark styler)))
+    (is (= "COUNTER_CLOCKWISE" (str (.getClockwiseDirectionType styler))))
+    (is (= 2.5 (.getSliceBorderWidth styler)))
+    (is (= "slice" (.getLabel series)))
+    (is (false? (.isEnabled series)))))
