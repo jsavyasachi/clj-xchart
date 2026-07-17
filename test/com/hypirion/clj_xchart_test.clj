@@ -109,3 +109,33 @@
        (c/xy-chart {"s" {:x [1 2] :y [3 4]}}
                    {:legend {:position :inside-nw}
                     :x-axis {:title "x" :title-style {:alignment :right}}}))))
+
+(deftest shared-parity-imports-and-lookups
+  (let [imports (ns-imports 'com.hypirion.clj-xchart)]
+    (doseq [class-name '[BoxChart OHLCChart DialChart RadarChart HeatMapChart
+                         HorizontalBarChart BoxSeries OHLCSeries DialSeries
+                         RadarSeries HeatMapSeries HorizontalBarSeries BoxStyler
+                         OHLCStyler DialStyler RadarStyler HeatMapStyler
+                         HorizontalBarStyler AnnotationText AnnotationLine
+                         AnnotationImage AnnotationTextPanel Cross Plus Trapezoid
+                         Oval Rectangle ColorBlindFriendlySeriesColors
+                         PrinterFriendlySeriesColors]]
+      (is (contains? imports class-name) (str "import " class-name))))
+  (is (= #{:cross :plus :trapezoid :oval :rectangle}
+         (set (filter c/markers [:cross :plus :trapezoid :oval :rectangle]))))
+  (is (= #{:step :step-area :polygon-area}
+         (set (filter c/xy-render-styles [:step :step-area :polygon-area]))))
+  (is (contains? c/category-render-styles :stepped-bar))
+  (is (= #{:inside-s :outside-s}
+         (set (filter c/legend-positions [:inside-s :outside-s]))))
+  (let [ohlc-var (ns-resolve 'com.hypirion.clj-xchart 'ohlc-render-styles)
+        radar-var (ns-resolve 'com.hypirion.clj-xchart 'radar-render-styles)
+        presets-var (ns-resolve 'com.hypirion.clj-xchart 'series-color-presets)]
+    (is (some? ohlc-var))
+    (is (some? radar-var))
+    (is (some? presets-var))
+    (when (and ohlc-var radar-var presets-var)
+      (is (= #{:candle :hilo :line} (set (keys (var-get ohlc-var)))))
+      (is (= #{:polygon :circle} (set (keys (var-get radar-var)))))
+      (is (= #{:color-blind-friendly :printer-friendly}
+             (set (keys (var-get presets-var))))))))

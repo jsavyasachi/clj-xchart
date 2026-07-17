@@ -2,10 +2,28 @@
   (:refer-clojure :exclude [spit])
   (:require [clojure.set :as set]
             [clojure.string :as s])
-  (:import (org.knowm.xchart BubbleChart
+  (:import (org.knowm.xchart AnnotationImage
+                             AnnotationLine
+                             AnnotationText
+                             AnnotationTextPanel
+                             BoxChart
+                             BoxSeries
+                             BubbleChart
                              XYChart
                              PieChart
                              CategoryChart
+                             DialChart
+                             DialSeries
+                             HeatMapChart
+                             HeatMapSeries
+                             HorizontalBarChart
+                             HorizontalBarSeries
+                             OHLCChart
+                             OHLCSeries
+                             OHLCSeries$OHLCSeriesRenderStyle
+                             RadarChart
+                             RadarSeries
+                             ToolTipType
                              XYSeries
                              CategorySeries
                              BubbleSeries
@@ -21,19 +39,37 @@
            (org.knowm.xchart.style Styler
                                    AxesChartStyler
                                    AxesChartStyler$TextAlignment
+                                   BoxStyler
+                                   BoxStyler$BoxplotCalCulationMethod
+                                   DialStyler
+                                   HeatMapStyler
+                                   HorizontalBarStyler
+                                   OHLCStyler
+                                   RadarStyler
+                                   RadarStyler$RadarRenderStyle
+                                   Styler$LegendLayout
                                    Styler$LegendPosition
+                                   Styler$YAxisPosition
                                    XYStyler
                                    CategoryStyler
                                    PieStyler
+                                   PieStyler$ClockwiseDirectionType
                                    PieStyler$LabelType
                                    BubbleStyler)
+           (org.knowm.xchart.style.colors ColorBlindFriendlySeriesColors
+                                          PrinterFriendlySeriesColors)
            (org.knowm.xchart.style.theme GGPlot2Theme
                                          MatlabTheme
                                          XChartTheme)
            (org.knowm.xchart.style.markers Circle
+                                           Cross
                                            Diamond
                                            None
+                                           Oval
+                                           Plus
+                                           Rectangle
                                            Square
+                                           Trapezoid
                                            TriangleDown
                                            TriangleUp)
            (org.knowm.xchart.style.lines SeriesLines)
@@ -98,14 +134,22 @@
   {:circle (Circle.)
    :diamond (Diamond.)
    :none (None.)
+   :cross (Cross.)
+   :oval (Oval.)
+   :plus (Plus.)
+   :rectangle (Rectangle.)
    :square (Square.)
+   :trapezoid (Trapezoid.)
    :triangle-up (TriangleUp.)
    :triangle-down (TriangleDown.)})
 
 (def xy-render-styles
   "The different xy-render styles: :area, :scatter and :line."
   {:area XYSeries$XYSeriesRenderStyle/Area
+   :polygon-area XYSeries$XYSeriesRenderStyle/PolygonArea
    :scatter XYSeries$XYSeriesRenderStyle/Scatter
+   :step XYSeries$XYSeriesRenderStyle/Step
+   :step-area XYSeries$XYSeriesRenderStyle/StepArea
    :line XYSeries$XYSeriesRenderStyle/Line})
 
 (def pie-render-styles
@@ -129,7 +173,19 @@
    :bar CategorySeries$CategorySeriesRenderStyle/Bar
    :line CategorySeries$CategorySeriesRenderStyle/Line
    :scatter CategorySeries$CategorySeriesRenderStyle/Scatter
+   :stepped-bar CategorySeries$CategorySeriesRenderStyle/SteppedBar
    :stick CategorySeries$CategorySeriesRenderStyle/Stick})
+
+(def ohlc-render-styles
+  "The different styles you can use for OHLC series."
+  {:candle OHLCSeries$OHLCSeriesRenderStyle/Candle
+   :hilo OHLCSeries$OHLCSeriesRenderStyle/HiLo
+   :line OHLCSeries$OHLCSeriesRenderStyle/Line})
+
+(def radar-render-styles
+  "The different styles you can use to render radar charts."
+  {:polygon RadarStyler$RadarRenderStyle/Polygon
+   :circle RadarStyler$RadarRenderStyle/Circle})
 
 (def bubble-render-styles
   "Different render styles for bubble series. For now this is useless, as you
@@ -148,9 +204,16 @@
   {:inside-n  Styler$LegendPosition/InsideN
    :inside-ne Styler$LegendPosition/InsideNE
    :inside-nw Styler$LegendPosition/InsideNW
+   :inside-s Styler$LegendPosition/InsideS
    :inside-se Styler$LegendPosition/InsideSE
    :inside-sw Styler$LegendPosition/InsideSW
-   :outside-e Styler$LegendPosition/OutsideE})
+   :outside-e Styler$LegendPosition/OutsideE
+   :outside-s Styler$LegendPosition/OutsideS})
+
+(def series-color-presets
+  "XChart's built-in accessible and print-friendly series color palettes."
+  {:color-blind-friendly (.getSeriesColors (ColorBlindFriendlySeriesColors.))
+   :printer-friendly (.getSeriesColors (PrinterFriendlySeriesColors.))})
 
 (def themes
   "The different default themes you can use with xchart."
