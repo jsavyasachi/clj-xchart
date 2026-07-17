@@ -693,8 +693,8 @@
   (add-series! [chart s-name data]
     (if (number? data)
       (.addSeries chart s-name data)
-      (let [{:keys [render-style fill-color show-in-legend?]} (:style num)
-            val (:value num)]
+      (let [{:keys [render-style fill-color show-in-legend?]} (:style data)
+            val (:value data)]
         (doto-cond
          (.addSeries chart s-name val)
          render-style (.setChartPieSeriesRenderStyle (pie-render-styles render-style))

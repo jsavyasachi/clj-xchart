@@ -75,6 +75,18 @@
                        :draw-all-annotations? true}))
         (str "pie annotation-type " atype))))
 
+(deftest pie-chart-map-style-series
+  (let [chart (c/pie-chart {"styled" {:value 7
+                                       :style {:render-style :donut
+                                               :fill-color :red
+                                               :show-in-legend? false}}})
+        series (.getSeries chart "styled")]
+    (is (= 7 (.getValue series)))
+    (is (= (c/pie-render-styles :donut)
+           (.getChartPieSeriesRenderStyle series)))
+    (is (= (c/colors :red) (.getFillColor series)))
+    (is (false? (.isShowInLegend series)))))
+
 (deftest bubble-chart-renders
   (is (renders-all-formats?
        (c/bubble-chart {"b" {:x [1 2 3] :y [4 5 6] :bubble [10 20 30]}}
