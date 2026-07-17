@@ -18,34 +18,35 @@ library for rendering charts/plots.
 <a href="https://clojure.org"><img src="https://img.shields.io/badge/Clojure-5881D8?style=flat&logo=clojure&logoColor=fff" alt="Clojure" /></a>
 <a href="https://clojure.org/guides/deps_and_cli"><img src="https://img.shields.io/badge/deps.edn-5881D8?style=flat&logo=clojure&logoColor=fff" alt="deps.edn" /></a>
 <a href="https://clojure.github.io/tools.build/"><img src="https://img.shields.io/badge/tools.build-5881D8?style=flat&logo=clojure&logoColor=fff" alt="tools.build" /></a>
-<a href="https://knowm.org/open-source/xchart/"><img src="https://img.shields.io/badge/XChart-4.0.1-4A86E8?style=flat" alt="XChart" /></a>
+<a href="https://knowm.org/open-source/xchart/"><img src="https://img.shields.io/badge/XChart-4.0.3-4A86E8?style=flat" alt="XChart" /></a>
 
 ## What
 
-clj-xchart wraps all the different charts you can generate in XChart:
+The current constructors cover:
 
-* Line charts
-* Scatter charts
-* Area charts
-* Bar charts
-* Histogram charts
-* Pie charts
-* Donut charts
+* XY charts: line, scatter, area, step, step-area, and polygon-area
+* Category charts: bar, stepped-bar, line, area, scatter, and stick
+* Pie and donut charts
 * Bubble charts
-* Stick charts
+
+This release line is expanding parity toward XChart's fuller chart-type set.
+The shared foundation now includes broader marker and render-style keywords,
+accessible and printer-friendly color presets, additional styler options, and
+chart-space or screen-space annotations for axes charts. Existing constructors
+and keyword-based styling remain compatible.
 
 ## Installation
 
 Leiningen/Boot:
 
 ```clj
-[net.clojars.savya/clj-xchart "0.3.5"]
+[net.clojars.savya/clj-xchart "0.3.8"]
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.3.5"}
+net.clojars.savya/clj-xchart {:mvn/version "0.3.8"}
 ```
 
 ## Usage
