@@ -73,10 +73,12 @@
                                            TriangleDown
                                            TriangleUp)
            (org.knowm.xchart.style.lines SeriesLines)
+           (org.knowm.xchart.internal.chartpart Annotation AxesChart)
            (org.knowm.xchart.internal.series Series)
            (java.io ByteArrayOutputStream FileOutputStream)
            (java.awt Color
                      GridLayout)
+           (java.awt.image BufferedImage)
            (java.util.function Function)
            (javax.swing JPanel
                         JFrame
@@ -647,6 +649,54 @@
         (assoc-in-nonexisting [:chart :title :font] font))
     style-map))
 
+(defn- ^Annotation annotation-object
+  [{:keys [type text lines image x y value orientation vertical?
+           coordinate-space screen-space?]
+    :as annotation}]
+  (if (instance? Annotation annotation)
+    annotation
+    (let [screen-space? (if (contains? annotation :screen-space?)
+                          (boolean screen-space?)
+                          (= :screen coordinate-space))
+          vertical? (if (contains? annotation :vertical?)
+                      (boolean vertical?)
+                      (or (= :vertical orientation)
+                          (= :vertical-line type)))]
+      (case type
+        :text (AnnotationText. ^String text (double x) (double y) screen-space?)
+        :line (AnnotationLine. (double value) vertical? screen-space?)
+        :vertical-line (AnnotationLine. (double value) true screen-space?)
+        :horizontal-line (AnnotationLine. (double value) false screen-space?)
+        :image (AnnotationImage. ^BufferedImage image (double x) (double y) screen-space?)
+        (:text-panel :panel)
+        (AnnotationTextPanel. ^String (if lines (s/join "\n" lines) text)
+                              (double x) (double y) screen-space?)
+        (throw (ex-info "Unknown annotation type"
+                        {:annotation annotation
+                         :expected-types #{:text :line :vertical-line
+                                           :horizontal-line :image
+                                           :text-panel :panel}}))))))
+
+(defn add-annotation!
+  "Adds an annotation map to an axes chart and returns the chart.
+
+  Text, image, and text-panel annotations use :x and :y; line annotations use
+  :value plus :orientation (:vertical or :horizontal). Values are in chart
+  coordinates by default. Set :coordinate-space :screen or :screen-space? true
+  to interpret them as screen pixels. Supported :type values are :text, :line,
+  :vertical-line, :horizontal-line, :image, and :text-panel (or :panel)."
+  [^AxesChart chart annotation]
+  (.addAnnotation chart (annotation-object annotation))
+  chart)
+
+(defn add-annotations!
+  "Adds each annotation map in `annotations` to an axes chart and returns it.
+  See `add-annotation!` for chart-space and screen-space coordinate semantics."
+  [^AxesChart chart annotations]
+  (doseq [annotation annotations]
+    (add-annotation! chart annotation))
+  chart)
+
 (extend-type XYChart
   Chart
   (add-series! [chart s-name data]
@@ -679,7 +729,7 @@
   ([series]
    (xy-chart series {}))
   ([series
-    {:keys [width height title theme render-style]
+    {:keys [width height title theme render-style annotations]
      :or {width 640 height 500}
      :as styling}]
    {:pre [series]}
@@ -699,7 +749,8 @@
       chart
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
-      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
 
 (extend-type CategoryChart
   Chart
@@ -736,7 +787,7 @@
    (category-chart* series {}))
   ([series
     {:keys [width height title theme render-style available-space-fill overlap?
-            stacked?]
+            stacked? annotations]
      :or {width 640 height 500}
      :as styling}]
    {:pre [series]}
@@ -759,7 +810,8 @@
       chart
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
-      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
 
 ;; Utility functions
 
@@ -858,7 +910,7 @@
   ([series]
    (bubble-chart* series {}))
   ([series
-    {:keys [width height title theme render-style]
+    {:keys [width height title theme render-style annotations]
      :or {width 640 height 500}
      :as styling}]
    {:pre [series]}
@@ -877,7 +929,8 @@
       chart
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
-      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
 
 (defn- max-bubble-value [series]
   (reduce max

@@ -6,7 +6,8 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.test.check.clojure-test :refer [defspec]])
-  (:import (java.awt Font)))
+  (:import (java.awt Font)
+           (java.awt.image BufferedImage)))
 
 (def category-series-gen
   (gen/map gen/string-ascii (gen/double* {:infinite? false
@@ -289,3 +290,63 @@
     (is (= 2.5 (.getSliceBorderWidth styler)))
     (is (= "slice" (.getLabel series)))
     (is (false? (.isEnabled series)))))
+
+(defn- field-value
+  [object field-name]
+  (letfn [(lookup [class]
+            (if class
+              (try
+                (let [field (.getDeclaredField class field-name)]
+                  (.setAccessible field true)
+                  (.get field object))
+                (catch NoSuchFieldException _
+                  (lookup (.getSuperclass class))))
+              (throw (IllegalArgumentException. (str "No field " field-name)))))]
+    (lookup (class object))))
+
+(deftest annotation-coercion-and-helpers
+  (let [add-one (ns-resolve 'com.hypirion.clj-xchart 'add-annotation!)
+        add-many (ns-resolve 'com.hypirion.clj-xchart 'add-annotations!)]
+    (is (some? add-one))
+    (is (some? add-many))
+    (when (and add-one add-many)
+      (let [image (BufferedImage. 2 2 BufferedImage/TYPE_INT_ARGB)
+            chart (c/xy-chart {"s" [[0 1] [1 2]]})
+            text {:type :text :text "point" :x 1 :y 2}
+            vertical {:type :line :value 3 :orientation :vertical
+                      :coordinate-space :screen}
+            horizontal {:type :horizontal-line :value 4}
+            image-ann {:type :image :image image :x 5 :y 6 :screen-space? true}
+            panel {:type :text-panel :lines ["one" "two"] :x 7 :y 8}
+            returned-one (add-one chart text)
+            returned-many (add-many chart [vertical horizontal image-ann panel])
+            annotations (vec (field-value chart "annotations"))
+            [text-object vertical-object horizontal-object image-object panel-object]
+            annotations]
+        (is (identical? chart returned-one))
+        (is (identical? chart returned-many))
+        (is (= 5 (count annotations)))
+        (is (= "org.knowm.xchart.AnnotationText" (.getName (class text-object))))
+        (is (= "point" (field-value text-object "text")))
+        (is (= 1.0 (field-value text-object "x")))
+        (is (= 2.0 (field-value text-object "y")))
+        (is (false? (field-value text-object "isValueInScreenSpace")))
+        (is (= "org.knowm.xchart.AnnotationLine" (.getName (class vertical-object))))
+        (is (true? (field-value vertical-object "isVertical")))
+        (is (= 3.0 (field-value vertical-object "value")))
+        (is (true? (field-value vertical-object "isValueInScreenSpace")))
+        (is (false? (field-value horizontal-object "isVertical")))
+        (is (= "org.knowm.xchart.AnnotationImage" (.getName (class image-object))))
+        (is (identical? image (field-value image-object "image")))
+        (is (true? (field-value image-object "isValueInScreenSpace")))
+        (is (= "org.knowm.xchart.AnnotationTextPanel" (.getName (class panel-object))))
+        (is (= ["one" "two"] (vec (field-value panel-object "lines"))))))))
+
+(deftest axes-constructors-add-annotations
+  (let [spec [{:type :text :text "a" :x 0 :y 0}]
+        charts [(c/xy-chart {"s" [[0] [1]]} {:annotations spec})
+                (c/category-chart* [["s" [["x"] [1]]]] {:annotations spec})
+                (c/bubble-chart* {"s" {:x [0] :y [1] :bubble [2]}}
+                                 {:annotations spec})]]
+    (doseq [chart charts]
+      (is (= 1 (count (field-value chart "annotations")))))))
