@@ -1269,3 +1269,394 @@
   (->> (transpose-map m)
        (map-vals normalize-group)
        transpose-map))
+
+;; OHLC charts
+
+(defn- ^OHLCSeries add-ohlc-raw-series
+  ;; addSeries is intentionally reflective so XChart can dispatch between its
+  ;; primitive-array and List overloads for each supported OHLC data shape.
+  [^OHLCChart chart s-name & data]
+  (clojure.lang.Reflector/invokeInstanceMethod
+   chart "addSeries" (to-array (cons s-name data))))
+
+(defn- ohlc-series-shape
+  [{:keys [volume] :as data}]
+  (let [map-data? (map? data)
+        ohlc? (and map-data?
+                   (every? #(contains? data %) [:open :high :low :close]))
+        partial-ohlc? (some #(contains? data %) [:open :high :low :close])
+        volume? (contains? data :volume)]
+    (cond
+      (and map-data? (contains? data :x) (contains? data :y)
+           (not partial-ohlc?) (not volume?))
+      :xy
+
+      (and ohlc? (contains? data :x) (not (contains? data :y))
+           (or (not volume?)
+               (instance? java.util.List volume)
+               (= (class volume) (class (long-array 0)))))
+      (if volume? :x-ohlcv :x-ohlc)
+
+      (and ohlc? (not (contains? data :x)) (not (contains? data :y))
+           (not volume?))
+      :ohlc
+
+      :else
+      (throw (ex-info
+              "Unsupported OHLC series shape"
+              {:series-data data
+               :expected-shapes [{:x 'xs :open 'opens :high 'highs
+                                  :low 'lows :close 'closes
+                                  :volume 'optional-long-array-or-list}
+                                 {:open 'opens :high 'highs
+                                  :low 'lows :close 'closes}
+                                 {:x 'xs :y 'ys}]})))))
+
+(defn- set-ohlc-style!
+  [^OHLCStyler styler {:keys [render-style]}]
+  (doto-cond
+   styler
+   render-style (.setDefaultSeriesRenderStyle
+                 (ohlc-render-styles render-style))))
+
+(extend-type OHLCChart
+  Chart
+  (add-series! [chart s-name data]
+    (let [{:keys [x y open high low close volume style]} data
+          {:keys [render-style up-color down-color
+                  marker-color marker-type line-color line-style line-width
+                  show-in-legend?]} style
+          shape (ohlc-series-shape data)]
+      (doto-cond
+       ^OHLCSeries
+       (case shape
+         :xy (add-ohlc-raw-series chart s-name x y)
+         :ohlc (add-ohlc-raw-series chart s-name open high low close)
+         :x-ohlc (add-ohlc-raw-series chart s-name x open high low close)
+         :x-ohlcv (add-ohlc-raw-series chart s-name x open high low close volume))
+       style (set-common-series-style! style)
+       render-style (.setOhlcSeriesRenderStyle
+                     (ohlc-render-styles render-style))
+       up-color (.setUpColor (colors up-color up-color))
+       down-color (.setDownColor (colors down-color down-color))
+       marker-color (.setMarkerColor (colors marker-color marker-color))
+       marker-type (.setMarker (markers marker-type marker-type))
+       line-color (.setLineColor (colors line-color line-color))
+       line-style (.setLineStyle (strokes line-style line-style))
+       line-width (.setLineWidth (float line-width))
+       (not (nil? show-in-legend?))
+       (.setShowInLegend (boolean show-in-legend?))))))
+
+(defn ohlc-chart
+  "Returns an OHLC chart. Series may contain :x, :open, :high, :low, and
+  :close data with optional :volume; :open, :high, :low, and :close without
+  explicit x data; or :x and :y line data. See the render-styles documentation
+  for styling options."
+  ([series]
+   (ohlc-chart series {}))
+  ([series
+    {:keys [width height title theme annotations]
+     :or {width 640 height 500}
+     :as styling}]
+   {:pre [series]}
+   (let [chart (OHLCChart. width height)
+         styling (attach-default-font styling)]
+     (doto-cond
+      ^OHLCStyler (.getStyler chart)
+      theme (.setTheme (themes theme theme))
+      styling (set-ohlc-style! styling))
+     (doseq [[s-name data] series]
+       (add-series! chart s-name data))
+     (doto (.getStyler chart)
+       (set-default-style! styling)
+       (set-axes-style! styling))
+     (doto-cond
+      chart
+      title (.setTitle title)
+      (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
+      annotations (add-annotations! annotations)))))
+
+
+;; Dial charts
+
+(defn- set-dial-style!
+  [^DialStyler styler
+   {:keys [circular? axis-tick-values axis-tick-labels
+           axis-tick-labels-visible? axis-tick-marks-visible?
+           axis-tick-marks-color axis-tick-marks-stroke
+           axis-title-visible? axis-title-font axis-title-padding
+           lower-from lower-to lower-color
+           middle-from middle-to middle-color
+           upper-from upper-to upper-color
+           arc-angle donut-thickness arrow-length-percentage
+           arrow-arc-angle arrow-arc-percentage arrow-color
+           label-visible? label-font]}]
+  (doto-cond
+   styler
+   (not (nil? circular?)) (.setCircular (boolean circular?))
+   axis-tick-values (.setAxisTickValues (double-array axis-tick-values))
+   axis-tick-labels (.setAxisTickLabels (into-array String axis-tick-labels))
+   (not (nil? axis-tick-labels-visible?))
+   (.setAxisTickLabelsVisible (boolean axis-tick-labels-visible?))
+   (not (nil? axis-tick-marks-visible?))
+   (.setAxisTicksMarksVisible (boolean axis-tick-marks-visible?))
+   axis-tick-marks-color
+   (.setAxisTickMarksColor (colors axis-tick-marks-color axis-tick-marks-color))
+   axis-tick-marks-stroke
+   (.setAxisTickMarksStroke (strokes axis-tick-marks-stroke axis-tick-marks-stroke))
+   (not (nil? axis-title-visible?))
+   (.setAxisTitleVisible (boolean axis-title-visible?))
+   axis-title-font (.setAxisTitleFont axis-title-font)
+   axis-title-padding (.setAxisTitlePadding (int axis-title-padding))
+   lower-from (.setLowerFrom (double lower-from))
+   lower-to (.setLowerTo (double lower-to))
+   lower-color (.setLowerColor (colors lower-color lower-color))
+   middle-from (.setMiddleFrom (double middle-from))
+   middle-to (.setMiddleTo (double middle-to))
+   middle-color (.setMiddleColor (colors middle-color middle-color))
+   upper-from (.setUpperFrom (double upper-from))
+   upper-to (.setUpperTo (double upper-to))
+   upper-color (.setUpperColor (colors upper-color upper-color))
+   arc-angle (.setArcAngle (double arc-angle))
+   donut-thickness (.setDonutThickness (double donut-thickness))
+   arrow-length-percentage
+   (.setArrowLengthPercentage (double arrow-length-percentage))
+   arrow-arc-angle (.setArrowArcAngle (double arrow-arc-angle))
+   arrow-arc-percentage (.setArrowArcPercentage (double arrow-arc-percentage))
+   arrow-color (.setArrowColor (colors arrow-color arrow-color))
+   (not (nil? label-visible?)) (.setLabelVisible (boolean label-visible?))
+   label-font (.setLabelFont label-font)))
+
+(extend-type DialChart
+  Chart
+  (add-series! [chart s-name data]
+    (if (number? data)
+      (.addSeries chart s-name (double data))
+      (let [{:keys [value label style]} data
+            {:keys [fill-color show-in-legend?]} style]
+        (doto-cond
+         ^DialSeries
+         (if label
+           (.addSeries chart s-name (double value) label)
+           (.addSeries chart s-name (double value)))
+         style (set-common-series-style! style)
+         fill-color (.setFillColor (colors fill-color fill-color))
+         (not (nil? show-in-legend?))
+         (.setShowInLegend (boolean show-in-legend?)))))))
+
+(defn dial-chart
+  "Returns a dial chart. The series map values are numbers or maps containing
+  :value, an optional :label, and an optional :style map. XChart displays one
+  dial series at a time."
+  ([series]
+   (dial-chart series {}))
+  ([series
+    {:keys [width height title theme]
+     :or {width 640 height 500}
+     :as styling}]
+   {:pre [series]}
+   (let [chart (DialChart. width height)
+         styling (attach-default-font styling)]
+     (doseq [[s-name data] series]
+       (add-series! chart s-name data))
+     (doto-cond
+      ^DialStyler (.getStyler chart)
+      theme (.setTheme (themes theme theme))
+      styling (set-dial-style! styling))
+     (set-default-style! (.getStyler chart) styling)
+     (doto-cond
+      chart
+      title (.setTitle title)))))
+
+;; Radar charts
+
+(defn- set-radar-style!
+  [^RadarStyler styler
+   {:keys [circular? start-angle marker-size
+           radii-tick-marks-visible? radii-tick-marks-color
+           radii-tick-marks-stroke radii-tick-marks-count
+           radii-title-visible? radii-title-font radii-title-padding
+           series-filled? render-style]}]
+  (doto-cond
+   styler
+   (not (nil? circular?)) (.setCircular (boolean circular?))
+   start-angle (.setStartAngleInDegrees (double start-angle))
+   marker-size (.setMarkerSize (int marker-size))
+   (not (nil? radii-tick-marks-visible?))
+   (.setRadiiTicksMarksVisible (boolean radii-tick-marks-visible?))
+   radii-tick-marks-color
+   (.setRadiiTickMarksColor (colors radii-tick-marks-color radii-tick-marks-color))
+   radii-tick-marks-stroke
+   (.setRadiiTickMarksStroke (strokes radii-tick-marks-stroke radii-tick-marks-stroke))
+   radii-tick-marks-count (.setRadiiTickMarksCount (int radii-tick-marks-count))
+   (not (nil? radii-title-visible?))
+   (.setRadiiTitleVisible (boolean radii-title-visible?))
+   radii-title-font (.setRadiiTitleFont radii-title-font)
+   radii-title-padding (.setRadiiTitlePadding (int radii-title-padding))
+   (not (nil? series-filled?)) (.setSeriesFilled (boolean series-filled?))
+   render-style (.setRadarRenderStyle (radar-render-styles render-style))))
+
+(extend-type RadarChart
+  Chart
+  (add-series! [chart s-name data]
+    (if (sequential? data)
+      (.addSeries chart s-name (double-array data))
+      (let [{:keys [values tooltips style]} data
+            {:keys [fill-color line-color line-style line-width
+                    marker-color marker-type show-in-legend?]} style]
+        (doto-cond
+         ^RadarSeries
+         (if tooltips
+           (.addSeries chart s-name (double-array values)
+                       (into-array String tooltips))
+           (.addSeries chart s-name (double-array values)))
+         style (set-common-series-style! style)
+         fill-color (.setFillColor (colors fill-color fill-color))
+         line-color (.setLineColor ^Color (colors line-color line-color))
+         line-style (.setLineStyle ^java.awt.BasicStroke
+                                   (strokes line-style line-style))
+         line-width (.setLineWidth (float line-width))
+         marker-color (.setMarkerColor ^Color (colors marker-color marker-color))
+         marker-type (.setMarker ^org.knowm.xchart.style.markers.Marker
+                                 (markers marker-type marker-type))
+         (not (nil? show-in-legend?))
+         (.setShowInLegend (boolean show-in-legend?)))))))
+
+(defn radar-chart
+  "Returns a radar chart. Supply chart-level :radii-labels and map each series
+  name to values or to a map containing :values, optional :tooltips, and an
+  optional :style map."
+  ([series styling]
+   {:pre [series (:radii-labels styling)]}
+   (let [{:keys [width height title theme radii-labels]
+          :or {width 640 height 500}} styling
+         chart (RadarChart. width height)
+         styling (attach-default-font styling)]
+     (.setRadiiLabels chart (into-array String radii-labels))
+     (doseq [[s-name data] series]
+       (add-series! chart s-name data))
+     (doto-cond
+      ^RadarStyler (.getStyler chart)
+      theme (.setTheme (themes theme theme))
+      styling (set-radar-style! styling))
+     (set-default-style! (.getStyler chart) styling)
+     (doto-cond
+      chart
+      title (.setTitle title)))))
+
+
+;; Heat map charts
+
+(def ^:private number-array-class
+  (Class/forName "[Ljava.lang.Number;"))
+
+(def ^:private int-array-class
+  (Class/forName "[I"))
+
+(defn- coerce-heat-data
+  "Coerces matrix rows or indexed heat rows to XChart's Number[] row format."
+  [x-labels y-labels heat-data]
+  (let [rows (vec heat-data)
+        number-rows? (every? #(instance? number-array-class %) rows)
+        matrix? (or (every? #(instance? int-array-class %) rows)
+                    (and (not number-rows?)
+                         (= (count x-labels) (count rows))
+                         (every? #(= (count y-labels) (count %)) rows)))]
+    (if matrix?
+      (vec
+       (mapcat (fn [[x-index row]]
+                 (map-indexed
+                  (fn [y-index value]
+                    (into-array Number [x-index y-index value]))
+                  row))
+               (map-indexed vector rows)))
+      (mapv #(if (instance? number-array-class %)
+               %
+               (into-array Number %))
+            rows))))
+
+(defn- set-heat-map-style!
+  [^HeatMapStyler styler
+   {:keys [piecewise? piecewise-ranged? split-count split-number range-colors
+           draw-border? show-value? value-font value-font-color min max
+           gradient-legend-width gradient-legend-height
+           gradient-color-column-weight gradient-color-column-height
+           value-decimal-pattern value-formatter
+           heat-map-value-decimal-pattern heat-map-decimal-value-formatter]}]
+  (let [split-number (or split-count split-number)
+        gradient-color-column-weight (or gradient-legend-width
+                                         gradient-color-column-weight)
+        gradient-color-column-height (or gradient-legend-height
+                                         gradient-color-column-height)
+        value-decimal-pattern (or value-decimal-pattern
+                                  heat-map-value-decimal-pattern)
+        value-formatter (or value-formatter heat-map-decimal-value-formatter)]
+    (doto-cond
+     styler
+     (not (nil? piecewise?)) (.setPiecewise (boolean piecewise?))
+     (not (nil? piecewise-ranged?)) (.setPiecewiseRanged (boolean piecewise-ranged?))
+     split-number (.setSplitNumber (int split-number))
+     range-colors (.setRangeColors
+                   (into-array Color (map #(colors % %) range-colors)))
+     (not (nil? draw-border?)) (.setDrawBorder (boolean draw-border?))
+     (not (nil? show-value?)) (.setShowValue (boolean show-value?))
+     value-font (.setValueFont value-font)
+     value-font-color (.setValueFontColor (colors value-font-color value-font-color))
+     (not (nil? min)) (.setMin (double min))
+     (not (nil? max)) (.setMax (double max))
+     gradient-color-column-weight
+     (.setGradientColorColumnWeight (int gradient-color-column-weight))
+     gradient-color-column-height
+     (.setGradientColorColumnHeight (int gradient-color-column-height))
+     value-decimal-pattern (.setHeatMapValueDecimalPattern value-decimal-pattern)
+     value-formatter
+     (.setHeatMapDecimalValueFormatter (as-java-function value-formatter)))))
+
+(extend-type HeatMapChart
+  Chart
+  (add-series! [chart s-name data]
+    (when (.getHeatMapSeries chart)
+      (throw (ex-info "Heat map chart already has a series; exactly one series is supported"
+                      {:series-name s-name})))
+    (let [[x-labels y-labels heat-data]
+          (if (map? data)
+            ((juxt :x-labels :y-labels :heat-data) data)
+            data)]
+      (.addSeries chart
+                  ^String s-name
+                  ^java.util.List (vec x-labels)
+                  ^java.util.List (vec y-labels)
+                  ^java.util.List (coerce-heat-data x-labels y-labels heat-data)))))
+
+(defn heat-map-chart
+  "Returns a heat map chart. The series map must contain exactly one named
+  series with :x-labels, :y-labels, and :heat-data. Heat data may be a matrix
+  of row values or indexed [x-index y-index value] rows."
+  ([series]
+   (heat-map-chart series {}))
+  ([series
+    {:keys [width height title theme]
+     :or {width 640 height 500}
+     :as styling}]
+   {:pre [series]}
+   (when-not (= 1 (count series))
+     (throw (ex-info "Heat map charts require exactly one series entry"
+                     {:series-count (count series)})))
+   (let [chart (HeatMapChart. width height)
+         styling (attach-default-font styling)]
+     (doto-cond
+      ^HeatMapStyler (.getStyler chart)
+      theme (.setTheme (themes theme theme))
+      styling (set-heat-map-style! styling))
+     (let [[s-name data] (first series)]
+       (add-series! chart s-name data))
+     (doto (.getStyler chart)
+       (set-default-style! styling)
+       (set-axes-style! styling))
+     (doto-cond
+      chart
+      title (.setTitle title)
+      (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
+      (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
+
