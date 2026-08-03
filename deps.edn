@@ -1,7 +1,7 @@
 {:paths ["src/clj"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.5"}
-        org.knowm.xchart/xchart {:mvn/version "4.0.3"}
+        org.knowm.xchart/xchart {:mvn/version "4.0.4"}
         ;; xchart 4.0.3 makes its exporters optional (no longer transitive), but
         ;; com.hypirion.clj-xchart loads them at namespace init. Pin the exporter
         ;; libs it references (versions xchart 4.0.2 bundled); pdfbox/fontbox come
