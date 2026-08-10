@@ -1,13 +1,10 @@
 # Render Options
 
-XChart ships with roughly a million different options, and clj-xchart attempts
-to do the same. However, instead of performing mutable modifications on the
-chart itself, you pass in a map of styling values in clj-xchart.
+XChart has about 1 million options. clj-xchart uses a map of styling values
+instead of mutable changes to the chart.
 
-There will be a lot of examples below this big chunk which references most of
-the options. Feel free to skip it (it looks rather scary if you just want to
-tweak one or two styles), but if you find something you wonder about, it may be
-valuable to get back up here and look at the complete reference again.
+The following examples show most options. Skip this reference if you need only
+one or two styles. Return to it when you need an option.
 
 To follow the examples, you can either use
 [lein-try](https://github.com/rkneufeld/lein-try):
@@ -29,10 +26,9 @@ or [inlein](http://inlein.org/):
 ;; your code here
 ```
 
-The code below assumes that the namespace `com.hypirion.clj-xchart` is required
-and aliased to `c`, either like in the inlein example above, or in a `ns` form.
-Apart from that, one should be able to copypaste the code to get the
-visualisation up.
+The code below assumes that you require the namespace `com.hypirion.clj-xchart`
+and give it the alias `c`. Do this as in the inlein example above, or in a `ns`
+form. Copy the code to run the examples.
 
 ## Style Map
 
@@ -75,25 +71,22 @@ All charts support the following styles:
                     if the series itself contains marker information."}]}
 ```
 
-Wherever you can specify a color, you must use a java.awt.Color. For
-convenience, you can also use the following keywords which represent their
-respective color:
+Where you specify a color, use a java.awt.Color. You can also use these
+keywords for the respective color:
 
 ```clj
 #{:blue :black :cyan :dark-gray :gray :grey :green :light-gray
   :magenta :orange :pink :red :white :yellow}
 ```
 
-There are also predefined BasicStrokes available, which you can use if you do
-not prefer to use your own:
+These predefined BasicStrokes are also available:
 
 ```clj
 #{:none :solid :dash-dash :dash-dot :dot-dot}
 ```
 
-Wherever you set a marker, you could make your own by subclassing
-`org.knowm.xchart.style.markers.Marker`. That is a lot of effort though, so it's
-probably easier to just use the ones shipped with xchart. Here they are:
+You can make a marker by subclassing `org.knowm.xchart.style.markers.Marker`.
+Use the markers that XChart provides if they meet your needs:
 
 ```clj
 #{:circle :diamond :none :square :triangle-up :triangle-down}
@@ -105,22 +98,19 @@ For text alignments, only the following options can be used:
 #{:centre :left :right}
 ```
 
-Legends can be placed at different positions. Here are all the possible
-locations you can place them:
+You can place legends at these positions:
 
 ```clj
 #{:inside-n :inside-ne :inside-nw :inside-se :inside-sw :outside-e}
 ```
 
-Note that, although `:inside-n` is available, `:inside-s` isn't. I'd recommend
-to look up the options here or try it out before blindly shipping a different
-legend position to production.
+`:inside-n` is available, but `:inside-s` is not. Check these options before
+you use a different legend position in production.
 
 By default, the legend is placed `:outside-e`.
 
-Finally, themes. You can make your own theme (Which will not be discussed here,
-go to XChart's documentation if you're interested) or use the themes bundled
-with XChart by default:
+You can make a theme or use the themes included with XChart. See the XChart
+documentation for custom themes:
 
 ```clj
 #{:ggplot2 :matlab :xchart}
@@ -130,8 +120,7 @@ The `:xchart` option is chosen by default.
 
 ### Axes Styles
 
-All the chart types except the pie chart also supports styling of the axes. The
-styling is as such:
+All chart types except the pie chart support axis styling:
 
 ```clj
 {:axis {:ticks {:labels {:color "The color of tick labels"
@@ -174,21 +163,18 @@ styling is as such:
           :title-visible? "Whether or not to show title for this axis"}}
 ```
 
-Again, don't be too afraid, there will be examples below.
+The examples below show these options.
 
 ## General Purpose examples
 
-Before we start off with chart-specific options, it would be nice to show some
-of the million options. We will do so here.
+This section shows general options before chart-specific options.
 
-The typical values you should always provide is `:width`, `:height`, `:title`,
-`[:x-axis :title]` and `[:y-axis :title]`. Fortunately those should be
-self-describing, and if not, the examples below should help you with usage.
+Common values are `:width`, `:height`, `:title`, `[:x-axis :title]`, and
+`[:y-axis :title]`. The examples below show their use.
 
 ### Themes
 
-One easy way to tweak the style of the chart easily is via the `:theme` option.
-You can use one of `:ggplot2` `:matlab` or `:xchart` for this:
+Use `:theme` to change the chart style. Use `:ggplot2`, `:matlab`, or `:xchart`:
 
 ```clj
 (require '[com.hypirion.clj-xchart :as c])
@@ -216,9 +202,8 @@ You can use one of `:ggplot2` `:matlab` or `:xchart` for this:
 
 ### Logarithmic Scale
 
-Sometimes, you end up with y- or x-axes which grow exponentially. When you do,
-it's convenient to scale the chart logarithmically instead of linearly. This is
-possible by setting `[:x/y-axis :logarithmic?]` to true:
+Use logarithmic scaling for y- or x-axes that grow exponentially. Set
+`[:x/y-axis :logarithmic?]` to true:
 
 
 ```clj
@@ -236,16 +221,14 @@ possible by setting `[:x/y-axis :logarithmic?]` to true:
 
 ![Example of logarithmic scale](imgs/strexcorp-customers.png)
 
-Here you can also see the usage of `:decimal-pattern`, it is used to ensure we
-don't print ".0" after the year. See the documentation of
+This example uses `:decimal-pattern` to prevent printing ".0" after the year.
+See the documentation for
 [java.text.DecimalFormat](https://docs.oracle.com/javase/7/docs/api/java/text/DecimalFormat.html)
 for the complete decimal pattern specification.
 
 ### Legend Positions
 
-The legend often end up being so wide that it shrinks the plot area
-significantly. That's inconvenient, and to avoid that we can set
-`[:legend :position]`:
+The legend can be wide enough to reduce the plot area. Set `[:legend :position]`:
 
 ```clj
 (c/view (c/pie-chart
@@ -260,13 +243,11 @@ significantly. That's inconvenient, and to avoid that we can set
 
 ![Legend position example with Apples and Oranges](imgs/legend-positions.png)
 
-Here we also use `:series` to set the color of the series. For pie charts,
-there are no canonical form yet, and thus the ordering matters for `:series`.
-(It's on the list of things to fix)
+This example uses `:series` to set the series color. Pie charts have no
+canonical form, so order matters for `:series`. This needs a fix.
 
-Sometimes it's obvious from the context what the line(s) represent. In that
-case, we can omit the legend. We can also omit the axis titles if it's obvious
-what we represent:
+Omit the legend when the lines are clear from context. Omit axis titles when
+the chart content is clear:
 
 ```clj
 (import 'java.util.GregorianCalendar)
@@ -291,16 +272,14 @@ what we represent:
 
 ![A chart with no legend](imgs/no-legend.png)
 
-Here I also tweaked the x axis pattern to only show months. See the
-documentation for
+This example sets the x-axis pattern to show only months. See the documentation
+for
 [SimpleDateFormat](https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html)
 to see how one can tune this value.
 
-Additionally, I felt there were too many y-axis ticks. Some represented decimal
-values, and in this case I'd just prefer to show integers. You can attempt to
-tweak this by changing the value of `[:y-axis :tick-mark-spacing-hint]`, but
-this is hard to do automatically. Unfortunately that's the only option to tweak
-as of now, and it's not easy to work with.
+This chart has too many y-axis ticks. Some ticks show decimal values. Change
+`[:y-axis :tick-mark-spacing-hint]` to show integers. This option is hard to
+set automatically, and it is the only available option.
 
 ### Colors and Markers
 
@@ -334,11 +313,10 @@ We can use colors and markers to tweak the style of values:
 
 ![A chart with marker and color styling](imgs/wins-and-losses.png)
 
-It's preferable to keep this on the input themselves if possible, as the
-`:series` styler depends on ordering.
+Keep this style in the input when possible. The `:series` styler depends on
+order.
 
-The error bar color has an additional option, which is to match the series
-color. This can be done by setting the error bars color to `:match-series`:
+Set the error-bar color to `:match-series` to match the series color:
 
 ```clj
 (c/view (c/xy-chart
@@ -383,16 +361,14 @@ You can also set the stroke type on each chart type:
 
 ![Example of basic stroke usage](imgs/basic-strokes.png)
 
-Usually the default styles work fine, but you can also make your own strokes
-like in the example above.
+You can make custom strokes as in the example above.
 
 ## XY Chart Examples
 
-Now we can finally go over to specific chart examples.
+The following sections show chart-specific examples.
 
-The generic examples above should cover almost everything specific with XY
-charts. There is an additional option – `:render-style` – which changes how the
-xy-lines are rendered. The style can be only one of the following ones:
+The general examples above apply to most XY-chart options. `:render-style`
+changes how xy-lines render. Use one of these values:
 
 ```clj
 #{:line :area :scatter}
@@ -400,10 +376,9 @@ xy-lines are rendered. The style can be only one of the following ones:
 
 ### Area Chart
 
-By default `:line` is used. You can specify `:render-style` for the entire graph
-or on a per-series basis. The style defined on a specific series overrides the
-default style. Here's an XY-chart which uses `:area` by default, but the "Total
-memory" series overrides this via its own `:render-style`.
+The default is `:line`. Set `:render-style` for the chart or a series. A series
+style overrides the default. This XY-chart uses `:area`, but "Total memory"
+uses its own `:render-style`.
 
 ```clj
 (c/view (c/xy-chart
@@ -432,10 +407,8 @@ memory" series overrides this via its own `:render-style`.
 
 ### Scatter Chart
 
-If you do not want lines between points, you can use the render style
-`:scatter`. This is typical for when you have data points and want to show the
-relation between two variables in those points. Ordering does not matter for
-scatter charts, so the data points can be in arbitrary order:
+Use `:scatter` when you do not want lines between points. It can show the
+relation between two variables. Point order does not matter for scatter charts:
 
 ```clj
 (def april-data
@@ -467,8 +440,7 @@ scatter charts, so the data points can be in arbitrary order:
 
 ![Example of a scatter chart](imgs/scatter-example.png)
 
-You can even use it for silly things like a map for a 2D game! I'm not sure I'd
-recommend this as a rendering engine though.
+You can use it as a map for a 2D game. It is not a rendering engine.
 
 ```clj
 (def monsters

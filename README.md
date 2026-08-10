@@ -35,10 +35,14 @@ The constructors cover XChart 4.0.3's full chart-type set:
 * Radar charts: polygon and circle
 * Heat-map charts
 
-Alongside the chart types, the keyword-based styling covers the full marker and
-render-style set, accessible and printer-friendly color presets, the current
-XChart styler options, and chart-space or screen-space annotations for axes
-charts. Existing constructors and keyword-based styling remain compatible.
+The keyword-based styling covers these items:
+
+* the full marker and render-style set
+* accessible and printer-friendly color presets
+* the current XChart styler options
+* chart-space or screen-space annotations for axes charts
+
+Existing constructors and keyword-based styling stay compatible.
 
 ## Installation
 
@@ -56,10 +60,10 @@ net.clojars.savya/clj-xchart {:mvn/version "0.4.0"}
 
 ## Usage
 
-There are a lot of examples on the
-[examples page](https://hypirion.github.io/clj-xchart/examples), and
+The [examples page](https://hypirion.github.io/clj-xchart/examples) shows many
+examples, and
 [the tutorial](https://github.com/jsavyasachi/clj-xchart/blob/main/docs/tutorial.md)
-covers basic usage. For more advanced customisation, have a look at the
+covers basic usage. For more advanced customisation, see the
 [render options](https://github.com/jsavyasachi/clj-xchart/blob/main/docs/render-options.md)
 page.
 
@@ -76,11 +80,11 @@ forms keep working; only the Clojars coordinate changed.
 
 ## Compatibility
 
-XChart 4.x reorganised its API (the vector-graphics export, the styler
-hierarchy, and the pie "annotations" which are now "labels"). This fork tracks
-those changes while keeping clj-xchart's own keyword-based API unchanged, so
-charts written against earlier `com.hypirion/clj-xchart` releases keep
-rendering. See `CHANGELOG.md` for details.
+XChart 4.x changed its API: the vector-graphics export, the styler hierarchy,
+and the pie "annotations", which are now "labels". This fork follows those
+changes. The clj-xchart keyword-based API stays the same, so charts that use
+earlier `com.hypirion/clj-xchart` releases still render. See `CHANGELOG.md` for
+details.
 
 ## License
 

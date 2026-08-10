@@ -1,16 +1,16 @@
 # Tutorial for clj-xchart
 
 clj-xchart is a Clojure wrapper over the Java library
-[XChart](http://knowm.org/open-source/xchart/), which is a lightweight library
-for plotting data. If you feel Incanter is a bit too much for just plotting,
-then this may be a potential candidate.
+[XChart](http://knowm.org/open-source/xchart/). XChart is a small library that
+plots data. If Incanter is too large for your plotting task, clj-xchart can be
+an alternative.
 
-clj-xchart has a small set of functions, but roughly 1 million different render
-style options. We'll skip those here, but feel free to look at the
-[render-options](render-options.md) page if you want to know what you can and
-cannot configure.
+clj-xchart has a small set of functions, but about 1 million render-style options.
+This page does not describe them. See the
+[render-options](render-options.md) page for the options that you can and cannot
+configure.
 
-To play around with clj-xchart, you can either use
+To try clj-xchart, you can use
 [lein-try](https://github.com/rkneufeld/lein-try):
 
 ```shell
@@ -30,18 +30,17 @@ or [inlein](http://inlein.org/):
 ;; your code here
 ```
 
-The code below assumes that the namespace `com.hypirion.clj-xchart` is required
-and aliased to `c`, either like in the inlein example above, or in a `ns` form.
+The code below assumes that you require the namespace `com.hypirion.clj-xchart`
+and give it the alias `c`. Do this as in the inlein example above, or in a `ns`
+form.
 
 ## Visualising
 
-Before we go on, let's have a look at the different possible ways to save and
-show a chart on the screen.
+First, look at the different ways to save a chart and to show it on the screen.
 
-`view` takes one or more charts and renders in a swing frame. This is nice
-when you're prototyping and need to verify that the chart looks right. Or you
-can use it to compare the styling of two charts to figure out which one looks
-the best.
+`view` takes one or more charts and renders them in a swing frame. Use it during
+development to make sure that the chart is correct. You can also use it to
+compare the styling of two charts and find the best one.
 
 ```clj
 (c/view my-chart)
@@ -49,9 +48,9 @@ the best.
 (c/view my-chart1 my-chart2)
 ```
 
-`to-bytes` takes a single chart and a format type, and returns a byte array of
-the output. The format type can be either `:png`, `:gif`, `:bmp`,
-`:jpg`/`:jpeg`, `:pdf`, `:svg` and `:eps`.
+`to-bytes` takes a single chart and a format type. It returns a byte array of
+the output. The format type is one of `:png`, `:gif`, `:bmp`,
+`:jpg`/`:jpeg`, `:pdf`, `:svg`, and `:eps`.
 
 ```clj
 (c/to-bytes my-chart :png)
@@ -68,9 +67,10 @@ the output. The format type can be either `:png`, `:gif`, `:bmp`,
             (c/to-bytes stat-chart :svg))}))
 ```
 
-`spit` is utility function and a chart variant of Clojure's own `spit`. It takes
-a chart, a filename and an optional format type, and writes it to disk. If the
-format type is not specified, then it is guessed by the filename extension.
+`spit` is a utility function and a chart variant of Clojure's own `spit`. It
+takes a chart, a filename, and an optional format type, and writes the chart to
+disk. If you do not give the format type, `spit` gets it from the filename
+extension.
 
 ```clj
 (c/spit my-chart "results.pdf")
@@ -83,8 +83,8 @@ For low-level use, you can use `as-buffered-image` to get a
 
 ## XY-Charts
 
-The most straightforward chart type is the XY-chart: It plots line plots. To
-create a XY-chart, we use the `xy-chart` function:
+The simplest chart type is the XY-chart. It plots line plots. To create an
+XY-chart, use the `xy-chart` function:
 
 ```clj
 user=> (def chart
@@ -95,14 +95,14 @@ user=> (def chart
 user=> (c/view chart)
 ```
 
-This should show you something à la this:
+This shows a chart similar to this one:
 
 ![A basic XY-chart](imgs/basic-xy.png)
 
-All functions which creates charts start with the series they should contain.
-The series is a map from strings to the content of the series – which depends on
-what type of chart you want. For a simple xy-chart, this is a vector of 2 or 3
-sequences of numbers. The first sequence is the x values, the second is the y
+All functions that create charts start with the series they contain. The series
+is a map from strings to the content of the series. The content depends on the
+chart type that you want. For a simple xy-chart, the content is a vector of 2 or
+3 sequences of numbers. The first sequence is the x values, the second is the y
 values, and the optional last one is the error bars.
 
 ```clj
@@ -117,10 +117,10 @@ user=> (c/view error-bars)
 
 ![A basic XY-chart with error bars](imgs/xy-error-bars.png)
 
-The `view` function, which we've used two times already, is just a utility
-function which renders the chart for you in a window. It is variadic: You can
-view multiple charts in the same command if you want to compare them against
-each other (I usually do this when I want to figure out which one looks best):
+The `view` function, which this page uses two times above, is a utility function
+that renders the chart in a window. It is variadic. You can view more than one
+chart in the same command and compare them. Use this to find the chart that
+looks best:
 
 ```clj
 user=> (c/view chart error-bars)
@@ -130,8 +130,8 @@ user=> (c/view chart error-bars)
 
 ### Canonical Form
 
-All series values can either be on a shorthand form or a canonical form. If we
-go back to the content of the error-bars example:
+All series values are in a shorthand form or in a canonical form. Look again at
+the content of the error-bars example:
 
 ```clj
 {"The Prediction" [[1 2 3] ;; X
@@ -139,7 +139,7 @@ go back to the content of the error-bars example:
                    [0.2 0.9 0.6]]})
 ```
 
-Then the same data can be written like this:
+You can write the same data like this:
 
 ```clj
 {"The Prediction" {:x [1 2 3]
@@ -147,11 +147,10 @@ Then the same data can be written like this:
                    :error-bars [0.2 0.9 0.6]}}
 ```
 
-These two forms are identical, but the latter is more self-describing. Use the
-form which fits with how you extract your data.
+The two forms are identical, but the second form is more self-describing. Use
+the form that agrees with how you extract your data.
 
-One thing you can do with the canonical form which you cannot do with the
-shorthand form is to attach styling:
+The canonical form can attach styling. The shorthand form cannot do this:
 
 ```clj
 {"The Prediction" {:x [1 2 3]
@@ -161,28 +160,30 @@ shorthand form is to attach styling:
                            :line-color :red}}}
 ```
 
-This will render as follows:
+This renders as follows:
 
 ![A basic XY-chart with styled error bars](imgs/styled-error-bars.png)
 
-Note that you _can_ attach styling for the entire chart via
-[render-options](render-options.md), and in some cases also attach a style based
-on input ordering. What you should use depends on whether it makes sense to
-bundle styling with data or not in your use case.
+You _can_ attach styling for the full chart with
+[render-options](render-options.md). In some conditions you can also attach a
+style that is based on the input order. Your choice depends on your use case:
+keep the styling with the data, or keep it separate.
 
 ## Category Charts
 
-You can also render category charts with clj-xchart: This is done via
-`category-chart*`. The most famous type of category chart is probably the bar
-chart, but other variants exist. One difference between between XY-charts and
-category charts are their inputs: The X-axis of a category chart can either be
-numbers, dates or strings, whereas the X-axis of an XY-chart can only be numbers
-or dates. Another difference is that the X-axis isn't "sorted", nor will the
-deltas show up, that is, if the X-axis is `[100 -20]`, then 100 will be rendered
-first, then -20. If the X-axis were `[-20 -21 100]`, then the distance betweeen
--20 and -21 is as large as the one between -21 to 100.
+clj-xchart can also render category charts. Use `category-chart*` for them. The
+most common type of category chart is the bar chart, but other types exist.
 
-Let's have a look at one:
+XY-charts and category charts have different inputs. The X-axis of a category
+chart can be numbers, dates, or strings. The X-axis of an XY-chart can only be
+numbers or dates.
+
+The X-axis of a category chart is also not "sorted", and it does not show the
+deltas. If the X-axis is `[100 -20]`, the chart renders 100 first, then -20. If
+the X-axis is `[-20 -21 100]`, the distance between -20 and -21 is as large as
+the distance between -21 and 100.
+
+Look at an example:
 
 ```clj
 user=> (def expected [["Food" "Savings" "Rent"]
@@ -203,12 +204,12 @@ user=> (c/view chart)
 ![Image showing erroneous usage of category charts](imgs/category-chart-star.png)
 
 
-Here you see one of the many potential pitfalls of the category chart:
-"Unexpected" was not printed! XChart seems to only use the rows that are
-contained in the first input series, and since we use a map, we cannot be 100%
-sure of which series is given as input to XChart first.
+This shows one of the many problems of the category chart: the chart does not
+print "Unexpected". XChart appears to use only the rows in the first input
+series. The example uses a map, thus you cannot be sure which series goes to
+XChart first.
 
-Another issue with the category chart is that we often have mappings on the form
+Another problem with the category chart is that data is often in a map with this form:
 
 ```clj
 {"Food" 5.2
@@ -216,17 +217,15 @@ Another issue with the category chart is that we often have mappings on the form
  "Rent" 13.4}
 ```
 
-instead of having a vector of keys and a vector of vals. But this won't work if
-we want to use the canonical form.
+instead of a vector of keys and a vector of vals. This form does not work with
+the canonical form.
 
-To keep things easy to use, there is a convenience wrapper named
-`category-chart` (without the `*`). It will detect content on the shape
-described above and transform it into something `category-chart*` can handle
-without "surprising" behaviour.
+`category-chart` (without the `*`) is a convenience wrapper. It detects content
+in the shape described above. It transforms the content into input that
+`category-chart*` can handle.
 
-Additionally, since maps do not usually contain any ordering, you can specify
-the ordering through its 2-arity version. Since you can both order the series
-and the x values, depending on what you need:
+Maps do not usually contain an order. Use the 2-arity version to set the order.
+You can order the series and the x values:
 
 ```clj
 user=> (def expected {"Food" 5.2
@@ -251,9 +250,8 @@ user=> (c/view chart)
 
 ![Image showing series order usage of category charts](imgs/category-chart-series-order.png)
 
-Extra rows that are not included in the ordering will be printed in alphanumeric
-order. If none are provided, then they will be all be sorted by alphanumeric
-values.
+Rows not included in the order are printed in alphanumeric order. If you give
+no order, all rows are sorted alphanumerically.
 
 ```clj
 user=> (def chart (c/category-chart {"Expected" expected
@@ -266,15 +264,12 @@ user=> (c/view chart)
 
 ![Image showing x axis order usage of category charts](imgs/category-chart-x-axis-order.png)
 
-In this example, the series order is ordered alphanumerically, and the
-additional x-axis values Savings and Unexpected will be sorted alphanumerically
-as well.
+In this example, the series order is alphanumeric. The additional x-axis values
+Savings and Unexpected are also sorted alphanumerically.
 
 ### Overlapping category charts
 
-Another way of representing the same data is by overlapping the data on top of
-eachother. This is possible via the `:overlap?` styling option. In that case, we
-should transpose the data for it to make some sense:
+Use `:overlap?` to overlap the same data. Transpose the data to use this option:
 
 ```clj
 (def rent {"Expected" 13.4, "Actual" 13.4})
@@ -296,15 +291,13 @@ user=> (c/view chart)
 
 ![Image showing an overlapped category chart](imgs/category-chart-overlap.png)
 
-Overlap is _not_ the same as a stacked chart, and it should be noted that
-overlaps could paint over another series completely. If we were to reorder the
-series order to ``["Food" "Rent" "Savings" "Unexpected"]`, then you get some
-interesting results:
+Overlap is not the same as a stacked chart. An overlap can fully paint over
+another series. Reorder the series to ``["Food" "Rent" "Savings" "Unexpected"]`
+to see this result:
 
 ![Image showing a badly overlapped category chart](imgs/category-chart-overlap-bad.png)
 
-You rarely want to use overlap unless you know the data well and order it
-correctly.
+Use overlap only when you know the data and set the correct order.
 
 ### Stacked category charts
 
@@ -329,52 +322,40 @@ stacking beside eachother:
 
 ## Bubble Chart
 
-Bubble charts can be created via the `bubble-chart*`. It works more or less like
-an XY chart, except that error bars are replaced with bubble data which is
-required.
+Create bubble charts with `bubble-chart*`. It works like an XY chart, but it
+uses required bubble data instead of error bars.
 
-As one would guess, `bubble-chart*` is designed for low-level usage. Currently
-there is no high-level function named `bubble-chart` because it's not entirely
-obvious (yet!) for me how to send input and get a reasonable input out.
+`bubble-chart*` is for low-level use. There is no high-level function named
+`bubble-chart` because its input and output format is not yet defined.
 
-The bubble data given to `bubble-chart*` will be the _diameter in pixels_ to the
-bubbles which are rendered. Note that they don't scale, i.e. increasing the
-width and/or height of the chart will not increase the bubble sizes.
+The bubble data for `bubble-chart*` is the rendered bubble _diameter in pixels_.
+Bubble size does not scale with the width or height of the chart.
 
-This has some unfortunate effects. First and foremost people often treat bubbles
-by their total _area_ and not their _diameter_. Yet when you pass in bubble data
-to `bubble-chart*`, the value 20.0 has four times as much area as the
-value 10.0. It therefore usually makes sense to map the bubble data over
-`Math/sqrt` before using it in the chart.
+People often compare bubbles by total _area_, not _diameter_. In
+`bubble-chart*`, 20.0 has four times the area of 10.0. Map bubble data through
+`Math/sqrt` before you use it in the chart.
 
-Another issue is that the bubbles could end up being very large or very small in
-the chart, all depending on the numbers given as input. One way to scale bubbles
-in a relatively straightforward manner would be to set the highest bubble value
-_b-max_ to some desired bubble diameter _max-diameter_ (again in pixels). To do
-this, you have to find the _b-max_ (of _all_ the series) and scale all bubble
-values by the expression
+Bubble size can be very large or very small, based on the input values. Set the
+largest bubble value, _b-max_, to a selected bubble diameter, _max-diameter_, in
+pixels. Find _b-max_ for all series. Then scale every bubble value with this
+expression:
 
 ```clj
 (fn [b] (* max-diameter (Math/sqrt (/ b b-max))))
 ```
 
-However, this shouldn't be used as canon, because the bubbles are sized relative
-to the content of this particular chart. If the data you represent change over
-time, then this would make people confused. If you represent e.g. sales through
-a bubble chart, imagine the salespeople's horror when they notice that sales
-haven't increased for months! In that case, it's better to scale it with a
-constant you find when you start making these bubble charts.
+Do not use this as a general rule. Bubble size is relative to the chart content.
+If the data changes over time, the changing scale can confuse readers. For sales
+data, use a constant that you select when you make the charts.
 
-All in all, think really hard before you use bubble charts with the current
-implementation.
+Use bubble charts carefully with the current implementation.
 
-With that in mind, let's have a look at an actual example.
+This example uses bubble charts.
 
-Imagine we have two heuristics for an NP-complete task scheduling algorithm. One
-is based on taboo search and another on simulated annealing. We want to know
-which one is the best: In our case, we have, for different input sizes, the
-total cost (money) spent performing the tasks and the total time taken to finish
-all the tasks. We, of course, want to represent them both.
+This example has two heuristics for an NP-complete task scheduling algorithm.
+One uses taboo search. The other uses simulated annealing. For different input
+sizes, the data has total task cost and task completion time. The chart shows
+both values.
 
 ```clj
 (def taboo
@@ -398,11 +379,10 @@ all the tasks. We, of course, want to represent them both.
             :duration 47293720}})
 ```
 
-Here, the input sizes are the keys, and the map should contain obvious values.
-It doesn't make sense to use total cost or duration though, so we divide it by
-the total number of tasks. We use the y axis for total time needed to finish the
-tasks, while the cost is represented by bubble size (smaller is better). The
-constant 500 was randomly found through trial and error.
+The input sizes are the keys. Divide total cost and duration by the total number
+of tasks. The y-axis shows task completion time. Bubble size shows cost. A
+smaller bubble is better. The example selected the constant 500 by trial and
+error.
 
 ```clj
 (defn bubblify
@@ -414,9 +394,8 @@ constant 500 was randomly found through trial and error.
                 (keys m) (vals m))})
 ```
 
-The only remaining thing to make the chart readable is to scale the x-axis
-logarithmically. This is done by setting the `[:x-axis :logarithmic?]` property
-in the style map to true:
+Set `[:x-axis :logarithmic?]` to true in the style map to use a logarithmic
+x-axis:
 
 ```clj
 (c/view
@@ -432,13 +411,11 @@ in the style map to true:
 
 ![Image of a sample bubble chart](imgs/np-bubble.png)
 
-Here we also use a bit of styling to put the legend inside the plot instead of
-outside. It makes the chart a bit easier to read.
+This example puts the legend inside the plot.
 
 ## Pie Charts
 
-Compared to most of the other charts, the pie chart is very simple and hard to
-mess up. Just pass in map of strings to numbers and that's it:
+Pass a map of strings to numbers to create a pie chart:
 
 ```clj
 (c/view
@@ -449,22 +426,20 @@ mess up. Just pass in map of strings to numbers and that's it:
 
 ![Image of a sample pie chart](imgs/basic-pie-chart.png)
 
-Note that when the size of an entry is very small, its percentage is not shown.
-You can turn this behaviour off if you want to, see
+When an entry is very small, its percentage is not shown. You can disable this
+behavior. See
 [render-options](render-options.md).
 
 ## Utility Functions
 
-clj-xchart ships with two small data transformation functions to make it easier
-to create conforming series.
+clj-xchart has two data transformation functions for conforming series.
 
 ### `extract-series`
 
-A typical issue is how data is grouped. clj-xchart feels usually kind of awkward
-here, because the `:x`, `:y` and `:error-bar`/`:bubble` contents are separated
-from eachother.
+Data can be grouped in a form that is awkward for clj-xchart. The `:x`, `:y`,
+and `:error-bar`/`:bubble` content is separate.
 
-I usually tend to keep my data in pairs or maps instead, like
+Keep the data in pairs or maps, for example:
 
 ```clj
 (def pairs
@@ -478,9 +453,9 @@ I usually tend to keep my data in pairs or maps instead, like
    ...])
 ```
 
-To get around and get clj-xchart properly working I need to separate these. With
-`extract-series`, this is somewhat more convenient. The first argument is a
-map with extraction functions, and the second is the collection of values:
+Separate these values to use clj-xchart. `extract-series` does this. Its first
+argument is a map of extraction functions. Its second argument is a collection
+of values:
 
 ```clj
 (c/extract-series
@@ -498,15 +473,13 @@ map with extraction functions, and the second is the collection of values:
     :y (#inst "2016-10-11T22:22:18.771-00:00" #inst "2016-10-11T22:22:19.753-00:00" ...)}
 ```
 
-You can provide whatever keys you would like to, so if you need to compute
-`:bubble` as well, it's as easy as adding another entry, or if you need to
-compute `:x` through other means, then don't add it to the series.
+Provide the keys you need. Add an entry to compute `:bubble`. Do not add `:x`
+when you compute it by another method.
 
 ### `transpose-map`
 
-`transpose-map` is a convenient function if you have surveys or other nested
-maps where you want to inverse the y and x-axes. It simply switches the order
-between the outer keys and the inner keys. Here's an example which uses parts of
+Use `transpose-map` for surveys or other nested maps when you want to invert the
+y- and x-axes. It switches the outer and inner keys. This example uses part of
 the Clojure survey:
 
 ```clj
@@ -538,22 +511,18 @@ the Clojure survey:
 
 ### PDF Support
 
-Note that PDF support seems incredibly slow and might even break on Java 1.6 (I
-managed to get segfaults when using it). I would recommend to check out the
-performance before using the PDF option in production. The other vector formats
-seems to work fine though.
+PDF support can be slow and can fail on Java 1.6. Check performance before you
+use PDF in production. The other vector formats work correctly.
 
 ### View and Mutable Size
 
-If you use `view` on a chart, it seems like the chart's dimensions could be
-changed. So if you view it, scale the window a bit, then write it to a file,
-then the size could differ from what you originally intended it to be.
+`view` can change chart dimensions. If you view a chart, resize its window, and
+write it to a file, the size can differ from the selected size.
 
 ### Line Chart and X/Y ordering
 
-Line charts are effetively just a polyline, which means the order of the x and y
-values matters. They are not sorted beforehand, so you can make silly charts
-like this one:
+Line charts are effectively polylines, so x- and y-value order matters. The
+values are not sorted before the chart renders. This example shows the result:
 
 ```clj
 (defn log-spiral-x [a b t]
@@ -576,21 +545,18 @@ like this one:
 
 ![Emacs Learning Curve](imgs/emacs-learning-curve.png)
 
-Sometimes this is desirable, e.g. for making charts using parametric forms. But
-usually this is a recipe for disaster: Just pick an order and deal with it. This
-is not an issue if you use scatter- or bubble charts.
+This behavior can be useful for charts with parametric forms. Select the order
+for other line charts. Scatter and bubble charts do not have this issue.
 
 ### Many Datapoints
 
 #### The Opt Namespace
 
-If you have a lot of datapoints and don't want to duplicate data, then you can
-use the `com.hypirion.clj-xchart.opt` namespace to create unmodifiable views
-over lists and vectors. They do not duplicate any data, in stark contrast to
-`map` and `mapv`.
+Use `com.hypirion.clj-xchart.opt` to create immutable views of lists and vectors
+without duplicating data. Unlike `map` and `mapv`, these views do not duplicate
+data.
 
-Typically you would just use `extract-series` from that particular namespace
-like so:
+Use `extract-series` from this namespace:
 
 ```clj
 (ns ...
@@ -604,21 +570,17 @@ like so:
   my-filename)
 ```
 
-You can also use `extract-field`, which works like `map` but is as mentioned
+You can also use `extract-field`. It works like `map` but is immutable.
 
-As they do not duplicate data, they also redo any computation if any user wants
-to lookup a value once more. This is typically not a problem, as one tends to
-just map over fields in a structure. But if you do some computation on top of
-the values, then be aware of this. If it's not efficient enough you may have to
-do some other tricks.
+These views do not duplicate data. They recompute a value when a user looks it
+up again. This is usually not a problem when you map fields in a structure. If
+you compute values, check performance.
 
 #### Shrinking the Dataset
 
-The more datapoints you have, the more memory XChart will use. You mileage may
-vary, but if the datapoints are roughly evenly spaced, then there's no need to
-have more than 2000 datapoints. If you have more points, you should consider
-grouping them together. Since it's not obvious what one wants (max? min? avg?)
-it's currently left out. This small code snippet may work well for you for now:
+More data points use more XChart memory. If data points are evenly spaced, use
+at most 2000 data points. Group more points. This library has no grouped-value
+option because the required value, such as max, min, or average, differs.
 
 ```clj
 (defn avg [coll]
@@ -642,4 +604,4 @@ it's currently left out. This small code snippet may work well for you for now:
             (update :y chunkify chunk-size))))))
 ```
 
-Finalizing this and putting it into the library is on the list of things to do.
+This function is not yet part of the library.

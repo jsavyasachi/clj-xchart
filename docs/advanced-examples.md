@@ -9,23 +9,19 @@
 > time) in some measurement, such as temperature or stock market price, in a
 > simple and highly condensed way.
 
-What can sparklines be used for? One example can be status dashboards for your
-server park. Over at [status.github.com](https://status.github.com), you can see
-charts that, in a sense, resemble sparklines:
+Use sparklines in status dashboards for your servers. At
+[status.github.com](https://status.github.com), charts resemble sparklines:
 
 ![Mean response time over at GitHub](imgs/gh-mean-response.png)
 
-Imagine if you have 100s of servers instead. Comparing bigger charts with
-eachother is hard, and putting all the series in the same is just going to
-create a mess. If you use sparklines instead, you could potentially make it
-easier to compare them.
+If you have hundreds of servers, large charts are hard to compare. A chart with
+all series is difficult to read. Sparklines can make comparison easier.
 
-It is possible to create sparklines in clj-xchart, but it requires some styling
-changes to get rid of the default options. In addition, I feel the line width
-and marker size is too big for smaller charts, so I shrink it.
+You can create sparklines in clj-xchart. Change the default styles. The default
+line width and marker size are too large for small charts, so this example
+reduces them.
 
-I like to emphasise where the current value is with a marker, so I also include
-that in the plot. You can remove that if you don't like it.
+This example marks the current value. You can remove the marker.
 
 ```clj
 (let [ys (repeatedly 100 #(* (- 0.5 (rand)) (rand)))]
@@ -53,37 +49,34 @@ that in the plot. You can remove that if you don't like it.
    "sparkline.png"))
 ```
 
-The code above creates a sparkline which looks like this:
+The code above creates this sparkline:
 ![standard looking sparkline](imgs/default-sparkline.png). If you prefer a more
-terminal-like colour scheme, you can replace the line's `:line-color` with
-`:green`, the marker's `:marker-color` to `:magenta` and the plot's
-`:background-color` to `:black`. This will make the sparkline look like this:
+terminal-like color scheme, replace the line's `:line-color` with `:green`.
+Change the marker's `:marker-color` to `:magenta`. Change the plot's
+`:background-color` to `:black`. The sparkline then looks like this:
 ![sparkline with terminal colors](imgs/hacker-sparkline.png).
 
 ## GitHub System Status
 
-Speaking of the GitHub system status, it would be interesting to see how close
-we can get to their style. GitHub uses D3 to visualise their status pages, but
-since the result is noninteractive, there is no reason (except for server
-performance) we couldn't use something like clj-xchart to render those pages.
+GitHub uses D3 to display its status pages. The result is noninteractive, so
+clj-xchart can render similar pages. Server performance can differ.
 
-If you'd like to render this yourself, head over to the
-[GitHub System Status](https://status.github.com/) and look at the source. In
-it, there should be some divs with a `data-string` attribute which just a JSON
-array of values (For example: `[[1477049100.0, 32.40260003567365],
+To render this example, open
+[GitHub System Status](https://status.github.com/) and inspect the source. It
+contains divs with a `data-string` attribute. The attribute is a JSON array of
+values. For example: `[[1477049100.0, 32.40260003567365],
 [1477049400.0, 35.22429803658118] ...]`). This is actually valid Clojure as
-well, so you can copypaste one of those and do
+well. Copy one of these values and run
 
 ```clj
 (def data ... ) ;; your long array of data here
 ```
 
-to follow along with the example provided.
+to use the example below.
 
-The data from GitHub is number of seconds since "the epoch" (January 1, 1970,
-00:00:00 GMT), along with the value detected at that time. We can convert the
-second value into a date by multiplying it with 1000 and pass it to
-java.util.Date:
+The GitHub data has the number of seconds since the epoch (January 1, 1970,
+00:00:00 GMT) and the value at that time. Multiply the number of seconds by
+1000. Then pass it to java.util.Date:
 
 ```clj
 (import '(java.util Date))
@@ -95,9 +88,7 @@ java.util.Date:
  data)
 ```
 
-We need to change the font size to something smaller, and this can be done by
-using the Java font class. Through experimentation, I found that the following
-font worked well:
+Change the font size with the Java Font class. This example uses this font:
 
 ```clj
 (import '(java.awt Font))
@@ -105,10 +96,8 @@ font worked well:
 (def small-plain (Font. Font/SANS_SERIF Font/PLAIN 10))
 ```
 
-Additionally, the default grid lines are dashed, and we'd like to have them
-solid. We could use `:solid` here, but that makes the grid lines too big, and
-there's no option to set the grid line size, so for me it seemed the easiest to
-just make a BasicStroke and pass it ourselves:
+The default grid lines are dashed. `:solid` makes the grid lines too large.
+XChart has no option to set the grid line size. Use a BasicStroke:
 
 ```clj
 (import '(java.awt BasicStroke))
@@ -116,9 +105,8 @@ just make a BasicStroke and pass it ourselves:
 (def small-stroke (BasicStroke. 0.2))
 ```
 
-Using the `:light-gray` color seems to work fine for everything except the font,
-which turns extremely light. To remedy this, we take the light gray color from
-the clj-xchart's color map and utilise the
+The `:light-gray` color makes the font too light. Get the light gray color from
+the clj-xchart color map and use the
 [`.darker`](https://docs.oracle.com/javase/7/docs/api/java/awt/Color.html#darker\(\))
 method
 
@@ -126,7 +114,7 @@ method
 (def font-color (.darker (c/colors :light-gray)))
 ```
 
-Combining all of this together results in the following piece of code:
+Use this code:
 
 ```clj
 (import '(java.util Date)
@@ -164,17 +152,14 @@ Combining all of this together results in the following piece of code:
  "gh-status.png")
 ```
 
-The result is comparable, but not identical. Left is original, right is the one
-emitted by the code above:
+The result is similar but not identical. The original is on the left. The code
+above produces the chart on the right:
 
 ![Mean response time over at GitHub](imgs/gh-mean-response.png "Original") ![clj-xchart output](imgs/gh-copycat-mean-response.png "Copycat")
 
-There are some things you cannot do easily with XChart/clj-xchart, and the big
-bad one here is tick marks: You can attempt to control it by setting
-`:tick-mark-spacing-hint` on either the `:y-axis` or the `:x-axis`, but they are
-just hints, and in this case, it will either remove all the tick marks or
-display the ones shown here.
+XChart/clj-xchart has limited tick-mark control. Set `:tick-mark-spacing-hint`
+on `:y-axis` or `:x-axis`. This option is a hint. Here, it removes all tick
+marks or displays the tick marks shown.
 
-The other "issue" is that you cannot remove the y-axis tick mark line without
-also removing the x-axis tick mark line: You can remove both via
-`[:axis :ticks :line-visible?]`, but not just one.
+You cannot remove the y-axis tick-mark line without removing the x-axis
+tick-mark line. `[:axis :ticks :line-visible?]` removes both lines.

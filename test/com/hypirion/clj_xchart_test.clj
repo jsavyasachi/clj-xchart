@@ -41,11 +41,10 @@
   (prop/for-all [series-map nonempty-category-series-map-gen]
     (= series-map (c/transpose-map (c/transpose-map series-map)))))
 
-;; Characterization tests for the XChart 4.x interop. The reflective styler /
-;; series / export calls only fail at runtime, so these build one of every
-;; chart type with rich styling and render every output format, asserting we
-;; get non-trivial bytes back. This is the regression net for the 3.2 -> 4.0.1
-;; port.
+;; Tests characterize the XChart 4.x interop. Reflective styler, series, and
+;; export calls fail only at runtime. These tests build each chart type with
+;; styling and render each output format. They assert that the output has bytes.
+;; These tests protect the 3.2 to 4.0.1 port.
 
 (defn- renders-all-formats? [chart]
   (every? (fn [fmt] (pos? (count (c/to-bytes chart fmt))))
@@ -96,14 +95,14 @@
                        {:title "bubble" :theme :xchart}))))
 
 (deftest opt-namespace-loads-and-maps
-  ;; Guards the src/java ListMapping class: the opt namespace imports it, so a
-  ;; missing :java-source-paths build (or an uncompiled jar) breaks here and in
-  ;; cljdoc, even though the core namespace is unaffected.
+  ;; This guards the src/java ListMapping class. The opt namespace imports it.
+  ;; A build without :java-source-paths, or an uncompiled jar, fails here and in
+  ;; cljdoc. The core namespace is unaffected.
   (let [coll [{:x 1 :y 10} {:x 2 :y 20} {:x 3 :y 30}]
         series (opt/extract-series {:x :x :y :y} coll)]
     (is (= [1 2 3] (vec (:x series))))
     (is (= [10 20 30] (vec (:y series))))
-    ;; the lazy view must render through a real chart end to end
+    ;; The lazy view must render through a real chart end to end.
     (is (pos? (count (c/to-bytes (c/xy-chart {"s" series}) :png))))))
 
 (deftest legend-position-and-alignment

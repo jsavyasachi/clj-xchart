@@ -84,7 +84,7 @@
                         JFrame
                         SwingUtilities)))
 
-;; reduce-map + map-vals is taken from the Medley utility library:
+;; reduce-map + map-vals comes from the Medley utility library:
 ;; https://github.com/weavejester/medley
 ;; Medley is under the same license (EPL1.0) as clj-xchart.
 (defn- reduce-map [f coll]
@@ -257,8 +257,8 @@
     (when cond2 (my2 #2 call2)))"
   [expr & clauses]
   (let [pairs (partition 2 clauses)
-        ;; carry any ^Tag hint on expr onto the binding so the doto-style
-        ;; method calls resolve without reflection
+        ;; Put each ^Tag hint from expr on the binding. This lets the doto-style
+        ;; method calls resolve without reflection.
         expr-sym (with-meta (gensym "expr") (meta expr))]
     `(let [~expr-sym ~expr]
        ~@(map (fn [[cond clause]]
@@ -321,13 +321,13 @@
 (defn- set-series-style!
   [^Styler styler
    series]
-  ;; All of these are arrays, so we mutate them and set them back in.
+  ;; These are arrays. Change them and set them again.
   (let [series-colors (.getSeriesColors styler)
         series-lines (.getSeriesLines styler)
         series-markers (.getSeriesMarkers styler)
         series (vec series)]
     (dotimes [i (count series)]
-      ;; TODO: nth instead mayhaps
+      ;; TODO: Use nth instead.
       (let [{:keys [color stroke marker]} (series i)]
         (when color
           (aset series-colors i (colors color color)))
@@ -393,8 +393,8 @@
    {:keys [annotations-font annotations? annotation anti-alias? base-font chart
            plot legend series series-colors text-anti-alias? tooltips
            y-axis-group-positions]}]
-  ;; XChart 4.x renamed "annotations" to "labels" and moved them off the base
-  ;; Styler onto the pie/category stylers, so route there when applicable.
+  ;; XChart 4.x changed "annotations" to "labels". It moved them from the base
+  ;; Styler to the pie/category stylers. Set them there when applicable.
   (when (instance? PieStyler styler)
     (doto-cond ^PieStyler styler
       annotations-font (.setLabelsFont annotations-font)
@@ -537,9 +537,8 @@
      axis-title (set-axis-title! axis-title)
      date-pattern (.setDatePattern date-pattern)
      decimal-pattern (.setDecimalPattern decimal-pattern)
-     ;; The logic here is as follows: You can specify a colour for the error
-     ;; bars. If the colour is :match-series, then the colour matches the series
-     ;; colour, but if you specify something else, you cannot match the series!
+     ;; You can set a color for error bars. If the color is :match-series, it
+     ;; matches the series color. Another color cannot match the series.
      (and ebc (not= ebc :match-series)) (.setErrorBarsColor (colors ebc ebc))
      (and ebc (not= ebc :match-series)) (.setErrorBarsColorSeriesColor false)
      (= ebc :match-series) (.setErrorBarsColorSeriesColor true)
@@ -620,9 +619,9 @@
    y-axis-decimal-pattern (.setYAxisDecimalPattern y-axis-decimal-pattern)))
 
 (defn- add-raw-series
-  ;; addSeries is intentionally reflective: chart is one of several types and
-  ;; XChart exposes ~12 addSeries overloads (double[]/float[]/int[]/List), so we
-  ;; rely on runtime dispatch to accept whatever numeric collection is passed.
+  ;; addSeries is reflective because chart has several types. XChart has about
+  ;; 12 addSeries overloads (double[]/float[]/int[]/List). Runtime dispatch
+  ;; accepts the numeric collection passed to this function.
   ([chart s-name x-data y-data]
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data])))
@@ -727,9 +726,8 @@
          (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
 
 (defn xy-chart
-  "Returns an xy-chart. See the tutorial for more information about
-  how to create an xy-chart, and see the render-styles documentation
-  for styling options."
+  "Returns an xy-chart. See the tutorial for how to create an xy-chart.
+  See the render-styles documentation for styling options."
   ([series]
    (xy-chart series {}))
   ([series
@@ -905,10 +903,9 @@
          (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
 
 (defn category-chart*
-  "Returns a raw category chart. Prefer `category-chart` unless you
-  run into performance issues. See the tutorial for more information
-  about how to create category charts, and see the render-styles
-  documentation for styling options."
+  "Returns a raw category chart. Use `category-chart` unless you have
+  performance issues. See the tutorial for how to create category charts.
+  See the render-styles documentation for styling options."
   ([series]
    (category-chart* series {}))
   ([series
@@ -951,9 +948,9 @@
         (and (map? series-data)
              (contains? series-data :content)) (-> (:content series-data)
                                                    (normalize-category-series)
-                                                   ;; retain styling data:
+                                                   ;; Keep styling data.
                                                    (merge (dissoc series-data :content)))
-        ;; Assuming keys are strings/vals
+        ;; Assume keys are strings/vals.
         (and (map? series-data)
              (every? (comp not keyword?)
                      (keys series-data))) {:x (keys series-data)
@@ -971,15 +968,15 @@
 (defn- reorder-series
   "Reorders a normalized series content to the assigned ordering"
   [{:keys [x y] :as series} x-order]
-  ;; Here we may unfortunately recompute an input value. If perfomance is an
-  ;; issue, we may attach the mapping onto the series.
+  ;; This can recompute an input value. If performance is a problem, attach the
+  ;; mapping to the series.
   (let [mapping (zipmap x y)]
     (assoc series
            :x x-order
            :y (mapv (fn [x] (get mapping x 0.0)) x-order))))
 
-;; I do have some issues differing between a single series and multiple series.
-;; I'll call a map of series a series-map for now.
+;; A series differs from a map of series. This code calls a map of series a
+;; series-map.
 (defn- normalize-category-series-map
   "Given a series map, normalize the series to contain all x values with the
   order specified in x-order. If the x value does not exist in a series, the
@@ -994,9 +991,8 @@
     (map-vals #(reorder-series % x-order) series-map)))
 
 (defn category-chart
-  "Returns a category chart. See the tutorial for more information
-  about how to create category charts, and see the render-styles
-  documentation for styling options."
+  "Returns a category chart. See the tutorial for how to create category charts.
+  See the render-styles documentation for styling options."
   ([series]
    (category-chart series {}))
   ([series {:keys [x-axis series-order] :as styling}]
@@ -1020,7 +1016,7 @@
         (doto-cond
          ^BubbleSeries (add-raw-series chart s-name x y bubble)
          style (set-common-series-style! style)
-         ;; NOTE: Add render style when squares are added to the impl?
+         ;; NOTE: Add the render style when the implementation adds squares.
          render-style (.setBubbleSeriesRenderStyle (bubble-render-styles render-style))
          line-color (.setLineColor (colors line-color line-color))
          line-style (.setLineStyle (strokes line-style line-style))
@@ -1029,10 +1025,8 @@
          (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
 
 (defn bubble-chart*
-  "Returns a raw bubble chart. Bubble charts are hard to make right,
-  so please see the tutorial for more information about how to create
-  one. The render-styles page will give you information about styling
-  options."
+  "Returns a raw bubble chart. See the tutorial for how to create a bubble
+  chart. See the render-styles page for styling options."
   ([series]
    (bubble-chart* series {}))
   ([series
@@ -1128,7 +1122,7 @@
          (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
 
 (defn pie-chart
-  "Returns a pie chart. The series map is in this case just a mapping
+  "Returns a pie chart. The series map is a mapping
   from string to number. For styling information, see the
   render-styles page.
 
@@ -1147,8 +1141,8 @@
          styling (-> styling
                      attach-default-font
                      attach-default-annotation-distance)
-         ;; Need to rebind this one. We could probably omit it from the keys
-         ;; entry at the top, if it's not used for documentation purposes.
+         ;; Rebind this value. We can omit it from the keys entry if
+         ;; documentation does not use it.
          annotation-distance (:annotation-distance styling)]
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
@@ -1164,7 +1158,7 @@
       annotation-type (.setLabelType (pie-annotation-types annotation-type))
       styling (set-pie-style! styling))
      (set-default-style! (.getStyler chart) styling)
-     ;; Pie charts have no axes in XChart 4.x, so they take only a title.
+     ;; Pie charts have no axes in XChart 4.x. They take only a title.
      (doto-cond
       chart
       title (.setTitle title)))))
@@ -1224,9 +1218,9 @@
       (keyword extension))))
 
 (defn spit
-  "Spits the chart to the given filename. If no type is provided, the type is
-  guessed by the filename extension. If no extension is found, an error is
-  raised."
+  "Writes the chart to filename. If you do not provide a type, this function
+  gets the type from the filename extension. It raises an error without an
+  extension."
   ([chart fname]
    (spit chart fname (guess-extension fname)))
   ([chart fname type]
@@ -1247,9 +1241,8 @@
   (reduce-kv transpose-single {} series))
 
 (defn extract-series
-  "Transforms coll into a series map by using the values in the provided keymap.
-  There's no requirement to provide :x or :y (or any key at all, for that
-  matter), although that's common.
+  "Transforms coll into a series map. It uses the values in keymap. You do not
+  need to provide :x, :y, or any key.
 
   Example: (extract-series {:x f, :y g, :bubble bubble} coll)
         == {:x (map f coll), :y (map g coll), :bubble (map bubble coll)}"
@@ -1273,8 +1266,8 @@
 ;; OHLC charts
 
 (defn- ^OHLCSeries add-ohlc-raw-series
-  ;; addSeries is intentionally reflective so XChart can dispatch between its
-  ;; primitive-array and List overloads for each supported OHLC data shape.
+  ;; addSeries is reflective so XChart can dispatch its primitive-array and List
+  ;; overloads for each supported OHLC data shape.
   [^OHLCChart chart s-name & data]
   (clojure.lang.Reflector/invokeInstanceMethod
    chart "addSeries" (to-array (cons s-name data))))
@@ -1659,4 +1652,3 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))))))
-
