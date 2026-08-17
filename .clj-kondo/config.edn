@@ -1,0 +1,5 @@
+{:linters
+ {:invalid-arity
+  ;; doto-cond threads a Styler receiver into these helpers at runtime, which
+  ;; clj-kondo cannot infer and consequently reports as one-argument calls.
+  {:level :warning}}}
