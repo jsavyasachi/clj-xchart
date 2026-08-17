@@ -15,7 +15,6 @@
                              DialChart
                              DialSeries
                              HeatMapChart
-                             HeatMapSeries
                              HorizontalBarChart
                              HorizontalBarSeries
                              OHLCChart
