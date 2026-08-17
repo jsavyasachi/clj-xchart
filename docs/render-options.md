@@ -18,8 +18,8 @@ or [inlein](http://inlein.org/):
 ```clj
 #!/usr/bin/env inlein
 
-'{:dependencies [[org.clojure/clojure "1.8.0"]
-                 [com.hypirion/clj-xchart "0.2.0"]]}
+'{:dependencies [[org.clojure/clojure "1.12.0"]
+                 [net.clojars.savya/clj-xchart "0.4.0"]]}
 
 (require '[com.hypirion.clj-xchart :as c])
 
