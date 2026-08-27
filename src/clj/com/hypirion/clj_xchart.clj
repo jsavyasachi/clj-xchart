@@ -101,7 +101,9 @@
   "Protocol for charts, which extends the XChart charts with
   additional polymorphic Clojure functions."
   (add-series! [chart series-name data]
-    "A method to add new series to the provided chart"))
+    "A method to add new series to the provided chart")
+  (update-series! [chart series-name data]
+    "A method to replace the data in an existing series"))
 
 (def colors
   "All the default java.awt colors as keywords. You can use this map
@@ -629,6 +631,11 @@
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data error-bars]))))
 
+(defn- update-raw-series
+  [chart method s-name & data]
+  (clojure.lang.Reflector/invokeInstanceMethod
+   chart method (to-array (cons s-name data))))
+
 (defn- assoc-in-nonexisting
   "Like assoc-in, but will only add fields not found. Nil may be found, in which
   case it is NOT updated."
@@ -723,7 +730,15 @@
          line-width (.setLineWidth (float line-width))
          fill-color (.setFillColor (colors fill-color fill-color))
          (not (nil? smooth?)) (.setSmooth (boolean smooth?))
-         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
+         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [chart s-name data]
+    (let [{:keys [x y error-bars]} (if (sequential? data)
+                                    {:x (first data) :y (second data)}
+                                    data)]
+      (.updateXYSeries chart ^String s-name
+                       ^java.util.List (vec x) ^java.util.List (vec y)
+                       ^java.util.List (when error-bars (vec error-bars)))
+      (.getSeries chart s-name))))
 
 (defn xy-chart
   "Returns an xy-chart. See the tutorial for how to create an xy-chart.
@@ -783,7 +798,11 @@
        style (set-common-series-style! style)
        fill-color (.setFillColor (colors fill-color fill-color))
        (not (nil? show-in-legend?))
-       (.setShowInLegend (boolean show-in-legend?))))))
+       (.setShowInLegend (boolean show-in-legend?)))))
+  (update-series! [chart s-name data]
+    (let [values (if (map? data) (:values data) data)]
+      (update-raw-series chart "updateBoxSeries" s-name (vec values))
+      (.getSeries chart s-name))))
 
 (defn box-chart
   "Returns a box chart. Each series is a collection of numeric values, or a
@@ -846,7 +865,15 @@
        style (set-common-series-style! style)
        fill-color (.setFillColor (colors fill-color fill-color))
        (not (nil? show-in-legend?))
-       (.setShowInLegend (boolean show-in-legend?))))))
+       (.setShowInLegend (boolean show-in-legend?)))))
+  (update-series! [chart s-name data]
+    (let [{:keys [x y]} (if (sequential? data)
+                          {:x (first data) :y (second data)}
+                          data)]
+      (update-raw-series chart "updateCategorySeries" s-name (vec x) (vec y))
+      (.getSeries chart s-name))))
+
+(declare normalize-category-series validate-category-update)
 
 (defn horizontal-bar-chart
   "Returns a horizontal bar chart. Series x values are numeric bar lengths and
@@ -900,7 +927,13 @@
          fill-color (.setFillColor (colors fill-color fill-color))
          (not (nil? smooth?)) (.setSmooth (boolean smooth?))
          (not (nil? overlapped?)) (.setOverlapped (boolean overlapped?))
-         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
+         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [chart s-name data]
+    (let [{:keys [x y error-bars]} (validate-category-update chart s-name data)]
+      (.updateCategorySeries chart ^String s-name
+                             ^java.util.List (vec x) ^java.util.List (vec y)
+                             ^java.util.List (when error-bars (vec error-bars)))
+      (.getSeries chart s-name))))
 
 (defn category-chart*
   "Returns a raw category chart. Use `category-chart` unless you have
@@ -990,6 +1023,19 @@
         x-order (into x-order extra-xs)]
     (map-vals #(reorder-series % x-order) series-map)))
 
+(defn- validate-category-update
+  "Require replacement categories to retain the chart-wide category order."
+  [chart s-name data]
+  (let [{:keys [x] :as data} (normalize-category-series data)
+        existing (some #(when (= s-name (.getName %)) %)
+                       (.getSeriesCollection chart))]
+    (when (and existing (not= (vec (.getXData existing)) (vec x)))
+      (throw (ex-info "Updated categories must match the chart's existing categories"
+                      {:series-name s-name
+                       :expected (vec (.getXData existing))
+                       :actual (vec x)})))
+    data))
+
 (defn category-chart
   "Returns a category chart. See the tutorial for how to create category charts.
   See the render-styles documentation for styling options."
@@ -1022,7 +1068,14 @@
          line-style (.setLineStyle (strokes line-style line-style))
          line-width (.setLineWidth (float line-width))
          fill-color (.setFillColor (colors fill-color fill-color))
-         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
+         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [chart s-name data]
+    (let [{:keys [x y bubble]} (if (sequential? data)
+                                 {:x (first data) :y (second data)
+                                  :bubble (nth data 2)}
+                                 data)]
+      (update-raw-series chart "updateBubbleSeries" s-name x y bubble)
+      (.getSeries chart s-name))))
 
 (defn bubble-chart*
   "Returns a raw bubble chart. See the tutorial for how to create a bubble
@@ -1119,7 +1172,11 @@
          style (set-common-series-style! style)
          render-style (.setChartPieSeriesRenderStyle (pie-render-styles render-style))
          fill-color (.setFillColor (colors fill-color fill-color))
-         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?)))))))
+         (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [chart s-name data]
+    (let [value (if (number? data) data (:value data))]
+      (.updatePieSeries chart s-name value)
+      (.getSeries chart s-name))))
 
 (defn pie-chart
   "Returns a pie chart. The series map is a mapping
@@ -1272,6 +1329,11 @@
   (clojure.lang.Reflector/invokeInstanceMethod
    chart "addSeries" (to-array (cons s-name data))))
 
+(defn- update-ohlc-raw-series
+  [^OHLCChart chart s-name & data]
+  (clojure.lang.Reflector/invokeInstanceMethod
+   chart "updateOHLCSeries" (to-array (cons s-name data))))
+
 (defn- ohlc-series-shape
   [{:keys [volume] :as data}]
   (let [map-data? (map? data)
@@ -1338,7 +1400,17 @@
        line-style (.setLineStyle (strokes line-style line-style))
        line-width (.setLineWidth (float line-width))
        (not (nil? show-in-legend?))
-       (.setShowInLegend (boolean show-in-legend?))))))
+       (.setShowInLegend (boolean show-in-legend?)))))
+  (update-series! [chart s-name data]
+    (let [{:keys [x y open high low close volume]} data
+          shape (ohlc-series-shape data)]
+      (apply update-ohlc-raw-series chart s-name
+             (case shape
+               :xy [x y]
+               :ohlc [open high low close]
+               :x-ohlc [x open high low close]
+               :x-ohlcv [x open high low close volume]))
+      (.getSeries chart s-name))))
 
 (defn ohlc-chart
   "Returns an OHLC chart. Series may contain :x, :open, :high, :low, and
@@ -1436,7 +1508,10 @@
          style (set-common-series-style! style)
          fill-color (.setFillColor (colors fill-color fill-color))
          (not (nil? show-in-legend?))
-         (.setShowInLegend (boolean show-in-legend?)))))))
+         (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [_ _ _]
+    (throw (ex-info "XChart has no in-place update capability for DialChart"
+                    {:chart-type :dial}))))
 
 (defn dial-chart
   "Returns a dial chart. The series map values are numbers or maps containing
@@ -1514,7 +1589,10 @@
          marker-type (.setMarker ^org.knowm.xchart.style.markers.Marker
                                  (markers marker-type marker-type))
          (not (nil? show-in-legend?))
-         (.setShowInLegend (boolean show-in-legend?)))))))
+         (.setShowInLegend (boolean show-in-legend?))))))
+  (update-series! [_ _ _]
+    (throw (ex-info "XChart has no in-place update capability for RadarChart"
+                    {:chart-type :radar}))))
 
 (defn radar-chart
   "Returns a radar chart. Supply chart-level :radii-labels and map each series
@@ -1620,7 +1698,21 @@
                   ^String s-name
                   ^java.util.List (vec x-labels)
                   ^java.util.List (vec y-labels)
-                  ^java.util.List (coerce-heat-data x-labels y-labels heat-data)))))
+                  ^java.util.List (coerce-heat-data x-labels y-labels heat-data))))
+  (update-series! [chart s-name data]
+    (let [[x-labels y-labels heat-data]
+          (if (map? data)
+            ((juxt :x-labels :y-labels :heat-data) data)
+            data)]
+      (when-not (.getHeatMapSeries chart)
+        (throw (ex-info "Heat map chart has no series to update"
+                        {:series-name s-name})))
+      (.updateSeries chart
+                     ^String s-name
+                     ^java.util.List (vec x-labels)
+                     ^java.util.List (vec y-labels)
+                     ^java.util.List (coerce-heat-data x-labels y-labels heat-data))
+      (.getSeries chart s-name))))
 
 (defn heat-map-chart
   "Returns a heat map chart. The series map must contain exactly one named

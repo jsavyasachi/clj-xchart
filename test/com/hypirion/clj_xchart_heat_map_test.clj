@@ -81,3 +81,11 @@
         (is (thrown-with-msg? clojure.lang.ExceptionInfo
                               #"already has a series"
                               (c/add-series! chart "second" data)))))))
+
+(deftest update-series-updates-heat-map-chart
+  (let [data {:x-labels ["x"] :y-labels ["y"] :heat-data [[1]]}
+        ^HeatMapChart chart ((ns-resolve 'com.hypirion.clj-xchart 'heat-map-chart)
+               {"s" data})]
+    (c/update-series! chart "s" (assoc data :heat-data [[9]]))
+    (is (= [[0 0 9]]
+           (mapv vec (.getHeatData ^HeatMapSeries (.getSeries chart "s")))))))

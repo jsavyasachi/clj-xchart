@@ -125,3 +125,14 @@
                                                 :low [0]
                                                 :close [1.5]
                                                 :volume [10]}}))))))
+
+(deftest update-series-updates-ohlc-chart
+  (let [constructor (ns-resolve 'com.hypirion.clj-xchart 'ohlc-chart)
+        chart (constructor {"s" {:x [1 2]
+                                  :open [10 11] :high [12 13]
+                                  :low [9 10] :close [11 12]}})]
+    (c/update-series! chart "s" {:x [3 4 5]
+                                  :open [20 21 22] :high [23 24 25]
+                                  :low [19 20 21] :close [22 23 24]})
+    (is (= [20.0 21.0 22.0]
+           (vec (.getOpenData (.getSeries chart "s")))))))

@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.0] - Unreleased
+
+### Added
+- Add `update-series!` for replacing series data in place on XY, category,
+  horizontal-bar, bubble, pie, box, OHLC, and heat-map charts. Category updates
+  validate the existing chart-wide category order, and bubble updates accept
+  already-scaled sizes. Dial and radar charts report XChart's lack of update
+  support with `ex-info`.
+
 ## [0.4.0] - 2026-07-16
 
 XChart 4.0.3 chart-type + styling parity pass. All additions are backward compatible.
