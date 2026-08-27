@@ -349,3 +349,36 @@
                                  {:annotations spec})]]
     (doseq [chart charts]
       (is (= 1 (count (field-value chart "annotations")))))))
+
+(deftest update-series-updates-xy-chart
+  (let [chart (c/xy-chart {"s" {:x [1 2] :y [3 4]}})]
+    (c/update-series! chart "s" {:x [5 6 7] :y [8 9 10]})
+    (is (= [5.0 6.0 7.0] (vec (.getXData (.getSeries chart "s")))))
+    (is (= [8.0 9.0 10.0] (vec (.getYData (.getSeries chart "s")))))))
+
+(deftest update-series-updates-category-chart
+  (let [chart (c/category-chart {"s" {"a" 1 "b" 2}})]
+    (c/update-series! chart "s" {:x ["a" "b"] :y [7 8]})
+    (is (= ["a" "b"] (vec (.getXData (.getSeries chart "s")))))
+    (is (= [7.0 8.0] (vec (.getYData (.getSeries chart "s")))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"categories must match"
+                          (c/update-series! chart "s"
+                                            {:x ["a" "c"] :y [9 10]})))))
+
+(deftest update-series-updates-horizontal-bar-chart
+  (let [chart (c/horizontal-bar-chart {"s" [[1 2] ["a" "b"]]})]
+    (c/update-series! chart "s" [[5 6 7] ["c" "d" "e"]])
+    (is (= [5 6 7] (vec (.getXData (.getSeries chart "s")))))
+    (is (= ["c" "d" "e"] (vec (.getYData (.getSeries chart "s")))))))
+
+(deftest update-series-updates-bubble-chart
+  (let [chart (c/bubble-chart* {"s" {:x [1 2] :y [3 4] :bubble [5 6]}})]
+    (c/update-series! chart "s" {:x [7 8 9] :y [10 11 12] :bubble [13 14 15]})
+    (is (= [7.0 8.0 9.0] (vec (.getXData (.getSeries chart "s")))))
+    (is (= [10.0 11.0 12.0] (vec (.getYData (.getSeries chart "s")))))))
+
+(deftest update-series-updates-pie-chart
+  (let [chart (c/pie-chart {"s" 1})]
+    (c/update-series! chart "s" 9)
+    (is (= 9 (.getValue (.getSeries chart "s"))))))

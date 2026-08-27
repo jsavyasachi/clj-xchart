@@ -75,6 +75,18 @@ page.
     (c/spit "chart.png"))
 ```
 
+Charts with mutable XChart series can be updated in place with
+`(c/update-series! chart series-name data)`. It accepts the same data shapes as
+`add-series!`, and replaces the existing series data rather than appending it.
+This is supported for XY, category, horizontal-bar, bubble, pie, box, OHLC, and
+heat-map charts. Category updates must provide the chart's existing categories
+in the same order; mismatches throw `ex-info` so cross-series alignment is not
+silently broken. Bubble charts created with `bubble-chart` scale sizes before
+adding them; updates expect those already-scaled bubble sizes because XChart
+does not retain the original scaling parameters. XChart 4.0.4 has no in-place
+update operation for dial or radar charts, so calls for those chart types throw
+`ex-info`.
+
 The Clojure namespace is still `com.hypirion.clj-xchart`, so existing `require`
 forms keep working; only the Clojars coordinate changed.
 

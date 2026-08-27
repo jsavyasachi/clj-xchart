@@ -152,3 +152,13 @@
     (is (= ["A" "B"] (vec (.getRadiiLabels radar)))))
   (is (thrown? AssertionError
                (c/radar-chart {"plain" [0.1 0.2]} {}))))
+
+(deftest update-series-reports-unsupported-dial-and-radar
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                        #"no in-place update capability.*DialChart"
+                        (c/update-series! (c/dial-chart {"s" 0.5}) "s" 0.7)))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                        #"no in-place update capability.*RadarChart"
+                        (c/update-series! (c/radar-chart {"s" [0.1 0.2]}
+                                                          {:radii-labels ["a" "b"]})
+                                          "s" [0.3 0.4]))))

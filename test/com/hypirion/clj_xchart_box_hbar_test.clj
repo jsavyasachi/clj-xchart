@@ -71,3 +71,15 @@
     (is (= "horizontal" (.getLabel styled)))
     (is (= (c/colors :blue) (.getFillColor styled)))
     (is (false? (.isShowInLegend styled)))))
+
+(deftest update-series-updates-box-chart
+  (let [chart (c/box-chart {"s" [1 2 3]})]
+    (c/update-series! chart "s" [7 8 9 10])
+    (is (= [7.0 8.0 9.0 10.0]
+           (vec (.getYData (.getSeries chart "s")))))))
+
+(deftest update-series-updates-horizontal-bar-chart
+  (let [chart (c/horizontal-bar-chart {"s" [[1 2] ["a" "b"]]})]
+    (c/update-series! chart "s" [[5 6 7] ["c" "d" "e"]])
+    (is (= [5 6 7] (vec (.getXData (.getSeries chart "s")))))
+    (is (= ["c" "d" "e"] (vec (.getYData (.getSeries chart "s")))))))
