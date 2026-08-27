@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.5.0] - Unreleased
+## [0.5.0] - 2026-08-27
 
 ### Added
 - Add `update-series!` for replacing series data in place on XY, category,
