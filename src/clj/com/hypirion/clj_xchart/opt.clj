@@ -1,6 +1,6 @@
 (ns com.hypirion.clj-xchart.opt
   "A namespace for clj-xchart with optimizations for large datasets."
-  (:import (com.hypirion.clj_xchart ListMapping)))
+  (:import (com.hypirion.clj_xchart ArrayMapping ListMapping)))
 
 (defn extract-field
   "Returns an immutable view of a sequence mapped by field. Field can be a
@@ -23,3 +23,25 @@
   (into {}
         (for [[k v] keymap]
           [k (extract-field v coll)])))
+
+(defn extract-array-field
+  "Returns a lazy List view over a Java array, including primitive arrays."
+  [field array]
+  (ArrayMapping. array field))
+
+(defn extract-array-series
+  "Builds a series map from an array of records without copying the array or
+  its fields before XChart consumes them."
+  [keymap array]
+  (into {}
+        (for [[k field] keymap]
+          [k (extract-array-field field array)])))
+
+(defn extract-reducible-series
+  "Builds lazy field sequences from any reducible collection. This adapter
+  deliberately returns reducible lazy sequences and does not materialize the
+  source collection; use `extract-series` when XChart requires indexed Lists."
+  [keymap reducible]
+  (into {}
+        (for [[k field] keymap]
+          [k (eduction (map field) reducible)])))

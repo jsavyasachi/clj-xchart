@@ -55,6 +55,17 @@ the output. The format type is one of `:png`, `:gif`, `:bmp`,
 ```clj
 (c/to-bytes my-chart :png)
 
+Bitmap exports also accept `:dpi` and JPEG `:quality` options. Multiple charts
+can be combined into one bitmap, and `to-output-stream` writes directly to an
+open stream without closing it:
+
+```clj
+(c/to-bytes my-chart :png {:dpi 300})
+(c/to-bytes my-chart :jpg {:quality 0.85})
+(c/to-bytes [chart-a chart-b] :png {:rows 1})
+(c/to-output-stream my-chart response-output-stream :png)
+```
+
 ;; Example
 
 (import '(java.io ByteArrayInputStream))

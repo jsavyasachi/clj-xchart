@@ -163,3 +163,43 @@ marks or displays the tick marks shown.
 
 You cannot remove the y-axis tick-mark line without removing the x-axis
 tick-mark line. `[:axis :ticks :line-visible?]` removes both lines.
+
+## Newer chart types cookbook
+
+These small examples are designed to be copied into a REPL. Each expression
+returns a chart, so it can be passed to `view`, `to-bytes`, or `spit`.
+
+```clj
+(c/box-chart {"latency" [12 18 21 27 31]})
+
+(c/horizontal-bar-chart {"sales" [[10 20 15] ["Q1" "Q2" "Q3"]]})
+
+(c/ohlc-chart {"price" {:x [1 2 3]
+                         :open [10 12 11] :high [13 14 15]
+                         :low [9 10 10] :close [12 11 14]}})
+
+(c/dial-chart {"cpu" {:value 0.72 :label "72%"}}
+              {:legend {:visible? false}})
+
+(c/radar-chart {"host-a" [0.8 0.5 0.9]
+                "host-b" [0.6 0.7 0.5]}
+               {:radii-labels ["speed" "reliability" "cost"]})
+
+(c/heat-map-chart
+ {"load" {:x-labels ["Mon" "Tue"] :y-labels ["AM" "PM"]
+           :heat-data [[1 2] [3 4]]}}
+ {:range-colors [:blue :white :red]
+  :locale java.util.Locale/US})
+```
+
+Annotations are maps added after construction. Headless HTTP or notebook
+exports can use bytes directly:
+
+```clj
+(c/add-annotations!
+ (c/xy-chart {"trend" {:x [1 2] :y [2 3]}})
+ [{:type :horizontal-line :value 2.5}
+  {:type :text :x 1.2 :y 3.0 :text "target"}])
+
+(def png-bytes (c/to-bytes my-chart :png {:dpi 300}))
+```

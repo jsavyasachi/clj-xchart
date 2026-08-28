@@ -2,6 +2,8 @@
   (:require [clojure.test :refer :all]
             [com.hypirion.clj-xchart :as c]
             [com.hypirion.clj-xchart.opt :as opt]
+            [com.hypirion.clj-xchart.tablecloth :as tablecloth]
+            [com.hypirion.clj-xchart.tech-ml-dataset :as dataset]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -59,7 +61,16 @@
                    {:title "xy" :theme :matlab :render-style :line
                     :annotations? true
                     :x-axis {:title "x" :title-style {:visible? true}}
-                    :y-axis {:title "y"}}))))
+                   :y-axis {:title "y"}}))))
+
+(deftest export-targets-and-options
+  (let [chart (c/xy-chart {"s" {:x [1 2] :y [3 4]}})
+        out (java.io.ByteArrayOutputStream.)]
+    (is (pos? (count (c/to-bytes chart :png {:dpi 144}))))
+    (is (pos? (count (c/to-bytes chart :jpg {:quality 0.4}))))
+    (is (= out (c/to-output-stream chart out :png)))
+    (is (pos? (.size out)))
+    (is (pos? (count (c/to-bytes [chart chart] :png))))))
 
 (deftest category-chart-renders
   (is (renders-all-formats?
@@ -94,6 +105,23 @@
                        {:in :max :out [20 :px]}
                        {:title "bubble" :theme :xchart}))))
 
+(deftest newer-chart-types-render-all-formats
+  (doseq [[label chart]
+          [["box" (c/box-chart {"s" [1 2 3]})]
+           ["horizontal-bar" (c/horizontal-bar-chart {"s" [[1 2] ["a" "b"]]})]
+           ["ohlc" (c/ohlc-chart {"s" {:x [1 2] :open [2 3] :high [4 5]
+                                         :low [1 2] :close [3 4]}})]
+           ["dial" (c/dial-chart {"s" {:value 0.5 :label "s"}}
+                                  {:legend {:visible? false}})]
+           ["radar" (c/radar-chart {"s" [0.2 0.4]} {:radii-labels ["a" "b"]})]
+           ["heat-map" (c/heat-map-chart {"s" {:x-labels ["x"]
+                                                  :y-labels ["y"]
+                                                  :heat-data [[1]]}}
+                                            {:locale java.util.Locale/US
+                                             :range-colors [:blue :white :red]
+                                             :font (Font. Font/SANS_SERIF Font/PLAIN 12)})]]]
+    (is (renders-all-formats? chart) label)))
+
 (deftest opt-namespace-loads-and-maps
   ;; This guards the src/java ListMapping class. The opt namespace imports it.
   ;; A build without :java-source-paths, or an uncompiled jar, fails here and in
@@ -104,6 +132,32 @@
     (is (= [10 20 30] (vec (:y series))))
     ;; The lazy view must render through a real chart end to end.
     (is (pos? (count (c/to-bytes (c/xy-chart {"s" series}) :png))))))
+
+(deftest opt-zero-copy-adapters
+  (let [rows (object-array [{:x 1 :y 10} {:x 2 :y 20}])
+        series (opt/extract-array-series {:x :x :y :y} rows)
+        reduced (opt/extract-reducible-series {:x :x :y :y}
+                                               (eduction (map identity) [{:x 3 :y 30}]))]
+    (is (= [1 2] (vec (:x series))))
+    (is (= [10 20] (vec (:y series))))
+    (is (= [3] (vec (:x reduced))))
+    (is (= [30] (vec (:y reduced))))
+    (is (instance? java.util.List (:x series)))))
+
+(deftest optional-dataset-adapters
+  (is (= {:x [1 2] :y [3 4]}
+         (tablecloth/from-columns {:x [1 2] :y [3 4]} {:x :x :y :y})))
+  (is (= {:x [1 2] :y [3 4]}
+         (dataset/from-columns {:x [1 2] :y [3 4]} {:x :x :y :y}))))
+
+(deftest declarative-series-validation
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"equal lengths"
+                        (c/xy-chart {"s" {:x [1 2] :y [3]}})))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"numeric"
+                        (c/xy-chart {"s" {:x [1 2] :y ["bad" 3]}})))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unknown render style"
+                        (c/xy-chart {"s" {:x [1] :y [2]}}
+                                    {:render-style :not-a-style}))))
 
 (deftest legend-position-and-alignment
   (is (renders-all-formats?
@@ -218,6 +272,23 @@
     (is (= 1 (.getYAxisGroup series)))
     (is (= "0.00" (.getYAxisDecimalPattern series)))
     (is (.isSmooth series))))
+
+(deftest remaining-axis-styler-options
+  (let [chart (c/xy-chart {"a" {:x [1 2] :y [3 4] :style {:y-axis-group 1}}
+                           "b" {:x [1 2] :y [30 40] :style {:y-axis-group 2}}}
+                          {:x-axis {:title-color :red}
+                           :y-axis {:title-color :blue
+                                    :groups {1 {:min 0 :max 10}
+                                             2 {:min 20 :max 50}}
+                                    :merge-groups [1 2]}
+                           :show-within-area-point? true})
+        styler (.getStyler chart)]
+    (is (= (c/colors :red) (.getXAxisTitleColor styler)))
+    (is (= (c/colors :blue) (.getYAxisTitleColor styler)))
+    (is (= 10.0 (.getYAxisMax styler (int 1))))
+    (is (= 20.0 (.getYAxisMin styler (int 2))))
+    (is (= 1 (.getYAxisVisualGroup styler (int 2))))
+    (is (.getShowWithinAreaPoint styler))))
 
 (deftest explicit-series-colors
   (let [styler (.getStyler (c/xy-chart {"s" [[1] [2]]}

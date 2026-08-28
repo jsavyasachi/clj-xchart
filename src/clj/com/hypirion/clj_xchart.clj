@@ -75,10 +75,11 @@
            (org.knowm.xchart.style.lines SeriesLines)
            (org.knowm.xchart.internal.chartpart Annotation AxesChart)
            (org.knowm.xchart.internal.series Series)
-           (java.io ByteArrayOutputStream FileOutputStream)
+           (java.io ByteArrayOutputStream FileOutputStream OutputStream)
            (java.awt Color
                      GridLayout)
            (java.awt.image BufferedImage)
+           (javax.imageio ImageIO)
            (java.util.function Function)
            (javax.swing JPanel
                         JFrame
@@ -394,7 +395,7 @@
   [^Styler styler
    {:keys [annotations-font annotations? annotation anti-alias? base-font chart
            plot legend series series-colors text-anti-alias? tooltips
-           y-axis-group-positions]}]
+           y-axis-group-positions show-within-area-point?]}]
   ;; XChart 4.x changed "annotations" to "labels". It moved them from the base
   ;; Styler to the pie/category stylers. Set them there when applicable.
   (when (instance? PieStyler styler)
@@ -405,7 +406,7 @@
     (doto-cond ^CategoryStyler styler
       annotations-font (.setLabelsFont annotations-font)
       (not (nil? annotations?)) (.setLabelsVisible (boolean annotations?))))
-  (doseq [[group position] y-axis-group-positions]
+   (doseq [[group position] y-axis-group-positions]
     (.setYAxisGroupPosition styler (int group) (y-axis-positions position position)))
   (doto-cond
    styler
@@ -418,7 +419,9 @@
    series-colors (set-series-colors! series-colors)
    series (set-series-style! series)
    (not (nil? text-anti-alias?)) (.setTextAntiAlias (boolean text-anti-alias?))
-   tooltips (set-tooltips! tooltips)))
+   tooltips (set-tooltips! tooltips)
+   (not (nil? show-within-area-point?))
+   (.setShowWithinAreaPoint (boolean show-within-area-point?))))
 
 (defn- set-axis-ticks!
   [^AxesChartStyler styler
@@ -476,7 +479,7 @@
    {:keys [label logarithmic? max min decimal-pattern
            logarithmic-decade-only? max-label-count tick-label-color
            tick-label-formatter tick-mark-color tick-mark-spacing-hint
-           ticks-visible? title-visible?]}]
+           ticks-visible? title-visible? title-color]}]
   (let [{:keys [alignment rotation vertical-alignment]} label]
     (doto-cond
      styler
@@ -498,6 +501,7 @@
                          (as-java-function tick-label-formatter))
    tick-mark-color (.setXAxisTickMarksColor (colors tick-mark-color tick-mark-color))
    tick-mark-spacing-hint (.setXAxisTickMarkSpacingHint (int tick-mark-spacing-hint))
+   title-color (.setXAxisTitleColor (colors title-color title-color))
    (not (nil? ticks-visible?)) (.setXAxisTicksVisible (boolean ticks-visible?))
    (not (nil? title-visible?)) (.setXAxisTitleVisible (boolean title-visible?))))
 
@@ -505,7 +509,8 @@
   [^AxesChartStyler styler
    {:keys [label logarithmic? max min decimal-pattern
            logarithmic-decade-only? tick-label-color tick-label-formatter
-           tick-mark-color tick-mark-spacing-hint ticks-visible? title-visible?]}]
+           tick-mark-color tick-mark-spacing-hint ticks-visible? title-visible?
+           title-color groups merge-groups]}]
   (let [{:keys [alignment rotation]} label]
     (doto-cond
      styler
@@ -523,8 +528,14 @@
                          (as-java-function tick-label-formatter))
    tick-mark-color (.setYAxisTickMarksColor (colors tick-mark-color tick-mark-color))
    tick-mark-spacing-hint (.setYAxisTickMarkSpacingHint (int tick-mark-spacing-hint))
+   title-color (.setYAxisTitleColor (colors title-color title-color))
    (not (nil? ticks-visible?)) (.setYAxisTicksVisible (boolean ticks-visible?))
-   (not (nil? title-visible?)) (.setYAxisTitleVisible (boolean title-visible?))))
+   (not (nil? title-visible?)) (.setYAxisTitleVisible (boolean title-visible?)))
+  (doseq [[group {:keys [min max]}] groups]
+    (when min (.setYAxisMin styler (Integer/valueOf (int group)) (Double/valueOf (double min))))
+    (when max (.setYAxisMax styler (Integer/valueOf (int group)) (Double/valueOf (double max)))))
+  (when merge-groups
+    (.mergeYAxisGroups styler (int-array merge-groups))))
 
 (defn- set-axes-style!
   [^AxesChartStyler styler
@@ -620,14 +631,43 @@
    (not (nil? y-axis-group)) (.setYAxisGroup (int y-axis-group))
    y-axis-decimal-pattern (.setYAxisDecimalPattern y-axis-decimal-pattern)))
 
+(defn- indexed-data? [value]
+  (or (vector? value)
+      (instance? java.util.List value)
+      (and value (.isArray (class value)))))
+
+(defn- data-count [value]
+  (cond
+    (instance? java.util.List value) (.size ^java.util.List value)
+    (.isArray (class value)) (java.lang.reflect.Array/getLength value)
+    :else (count value)))
+
+(defn- validate-series!
+  "Validates materialized declarative data while leaving lazy views lazy."
+  [x-data y-data]
+  (when (and (indexed-data? x-data) (indexed-data? y-data))
+    (when-not (= (data-count x-data) (data-count y-data))
+      (throw (ex-info "Series X and Y data must have equal lengths"
+                      {:x-count (data-count x-data) :y-count (data-count y-data)})))
+    (when (some #(not (number? %)) y-data)
+      (throw (ex-info "Series data must contain numeric values" {:axis :y})))))
+
+(defn- style-value [table value label]
+  (if (or (nil? value) (contains? table value) (not (keyword? value)))
+    (table value)
+    (throw (ex-info (str "Unknown " label ": " value)
+                    {:value value :supported (keys table)}))))
+
 (defn- add-raw-series
   ;; addSeries is reflective because chart has several types. XChart has about
   ;; 12 addSeries overloads (double[]/float[]/int[]/List). Runtime dispatch
   ;; accepts the numeric collection passed to this function.
   ([chart s-name x-data y-data]
+   (validate-series! x-data y-data)
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data])))
   ([chart s-name x-data y-data error-bars]
+   (validate-series! x-data y-data)
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data error-bars]))))
 
@@ -722,7 +762,8 @@
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
          style (set-common-series-style! style)
-         render-style (.setXYSeriesRenderStyle (xy-render-styles render-style))
+         render-style (.setXYSeriesRenderStyle
+                       (style-value xy-render-styles render-style "render style"))
          marker-color (.setMarkerColor (colors marker-color marker-color))
          marker-type (.setMarker (markers marker-type marker-type))
          line-color (.setLineColor (colors line-color line-color))
@@ -755,7 +796,8 @@
      (doto-cond
       ^XYStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      render-style (.setDefaultSeriesRenderStyle (xy-render-styles render-style))
+      render-style (.setDefaultSeriesRenderStyle
+                    (style-value xy-render-styles render-style "render style"))
       styling (set-xy-style! styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
@@ -1237,18 +1279,87 @@
    :svg VectorGraphicsEncoder$VectorGraphicsFormat/SVG
    :eps VectorGraphicsEncoder$VectorGraphicsFormat/EPS})
 
+(defn- scaled-image [^BufferedImage image dpi]
+  (if (or (nil? dpi) (= 96 dpi))
+    image
+    (let [scale (/ (double dpi) 96.0)
+          width (int (* scale (.getWidth image)))
+          height (int (* scale (.getHeight image)))
+          scaled (BufferedImage. width height BufferedImage/TYPE_INT_ARGB)
+          graphics (.createGraphics scaled)]
+      (try
+        (.drawImage graphics image 0 0 width height nil)
+        scaled
+        (finally (.dispose graphics))))))
+
+(defn- write-image-bytes [^BufferedImage image format quality]
+  (let [out (ByteArrayOutputStream.)]
+    (if (nil? quality)
+      (ImageIO/write image format out)
+      (let [writer (first (iterator-seq (ImageIO/getImageWritersByFormatName format)))]
+        (when-not writer
+          (throw (IllegalArgumentException. (str "No ImageIO writer for " format))))
+        (let [image-out (ImageIO/createImageOutputStream out)
+              params (.getDefaultWriteParam writer)]
+          (try
+            (.setOutput writer image-out)
+            (when (.canWriteCompressed params)
+              (.setCompressionMode params javax.imageio.ImageWriteParam/MODE_EXPLICIT)
+              (.setCompressionQuality params (float quality)))
+            (.write writer nil (javax.imageio.IIOImage. image nil nil) params)
+            (finally
+              (.dispose writer)
+              (.close image-out))))))
+    (.toByteArray out)))
+
+(defn- bitmap-bytes [chart type {:keys [dpi quality]}]
+  (let [format (name type)]
+    (if (nil? dpi)
+      (if quality
+        (write-image-bytes (as-buffered-image chart) format quality)
+        (BitmapEncoder/getBitmapBytes chart (bitmap-formats type)))
+      (write-image-bytes (scaled-image (as-buffered-image chart) dpi)
+                         format quality))))
+
+(defn to-output-stream
+  "Writes one chart, or a collection of charts, to an OutputStream.
+  Batch output is supported for bitmap formats; :rows and :columns control
+  the layout. The stream remains open."
+  ([chart-or-charts out type]
+   (to-output-stream chart-or-charts out type {}))
+  ([chart-or-charts ^OutputStream out type {:keys [rows columns]}]
+   (when-not (bitmap-formats type)
+     (throw (IllegalArgumentException. "OutputStream targets support bitmap formats only")))
+   (if (sequential? chart-or-charts)
+     (let [charts (java.util.ArrayList. chart-or-charts)
+           count-charts (.size charts)
+           rows (int (or rows 1))
+           columns (int (or columns (Math/ceil (/ count-charts (double rows)))))]
+       (BitmapEncoder/saveBitmap charts rows columns out (bitmap-formats type)))
+     (BitmapEncoder/saveBitmap chart-or-charts out (bitmap-formats type)))
+   out))
+
 (defn to-bytes
-  "Converts a chart into a byte array."
-  ([chart type]
-   (if-let [bitmap-format (bitmap-formats type)]
-     (BitmapEncoder/getBitmapBytes chart bitmap-format)
-     (if-let [vector-format (vector-formats type)]
-       (let [out (ByteArrayOutputStream.)]
-         (VectorGraphicsEncoder/saveVectorGraphic
-          ^org.knowm.xchart.internal.chartpart.Chart chart out
-          ^VectorGraphicsEncoder$VectorGraphicsFormat vector-format)
-         (.toByteArray out))
-       (throw (IllegalArgumentException. (str "Unknown format: " type)))))))
+  "Converts a chart into a byte array. Options support :dpi and :quality for
+  bitmap output. A sequential collection produces a batch bitmap." 
+  ([chart-or-charts type]
+   (to-bytes chart-or-charts type {}))
+  ([chart-or-charts type opts]
+   (if (and (sequential? chart-or-charts) (not (:dpi opts)) (not (:quality opts)))
+     (let [out (ByteArrayOutputStream.)]
+       (to-output-stream chart-or-charts out type opts)
+       (.toByteArray out))
+     (if (bitmap-formats type)
+       ;; XChart exposes :quality only for file targets, so JPEG quality is
+       ;; applied by bitmap-bytes through ImageIO's writer rather than here.
+       (bitmap-bytes chart-or-charts type opts)
+       (if-let [vector-format (vector-formats type)]
+         (let [out (ByteArrayOutputStream.)]
+           (VectorGraphicsEncoder/saveVectorGraphic
+            ^org.knowm.xchart.internal.chartpart.Chart chart-or-charts out
+            ^VectorGraphicsEncoder$VectorGraphicsFormat vector-format)
+           (.toByteArray out))
+         (throw (IllegalArgumentException. (str "Unknown format: " type))))))))
 
 (defn view
   "Utility function to render one or more charts in a swing frame."
@@ -1281,8 +1392,10 @@
   ([chart fname]
    (spit chart fname (guess-extension fname)))
   ([chart fname type]
+   (spit chart fname type {}))
+  ([chart fname type opts]
    (with-open [fos (FileOutputStream. ^String fname)]
-     (.write fos ^bytes (to-bytes chart type)))))
+     (.write fos ^bytes (to-bytes chart type opts)))))
 
 (defn- transpose-single
   [acc k1 v1]

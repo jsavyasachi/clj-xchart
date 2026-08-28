@@ -1,5 +1,23 @@
 # Change Log
 
+## [Unreleased]
+
+### Added
+- Add stream and batch bitmap export via `to-output-stream` and collection
+  input to `to-bytes`, with DPI and JPEG quality options for bitmap bytes.
+- Extend `spit` with export options while preserving its existing arities.
+- Add axis title colors, per-group Y-axis limits, Y-axis group merging, and
+  show-within-area point styling.
+- Add zero-copy primitive-array field views and an explicitly lazy reducible
+  field adapter in `com.hypirion.clj-xchart.opt`.
+- Add dependency-free optional adapters for tablecloth and tech.ml.dataset
+  column sources.
+- Validate materialized declarative series lengths and numeric values, and
+  report unknown XY render-style keywords with `ex-info`.
+- Add headless all-format render smoke coverage for the six newer chart types.
+- Add a discoverable cookbook for OHLC, box, horizontal-bar, dial, radar,
+  heat-map, annotations, and headless export.
+
 ## [0.5.0] - 2026-08-27
 
 ### Added
