@@ -1349,12 +1349,10 @@
      (let [out (ByteArrayOutputStream.)]
        (to-output-stream chart-or-charts out type opts)
        (.toByteArray out))
-     (if-let [bitmap-format (bitmap-formats type)]
-       (if (and (= type :jpg) (:quality opts))
-         ;; XChart exposes quality only for file targets. ImageIO's default
-         ;; writer is still a valid, deterministic stream target.
-         (bitmap-bytes chart-or-charts type opts)
-         (bitmap-bytes chart-or-charts type opts))
+     (if (bitmap-formats type)
+       ;; XChart exposes :quality only for file targets, so JPEG quality is
+       ;; applied by bitmap-bytes through ImageIO's writer rather than here.
+       (bitmap-bytes chart-or-charts type opts)
        (if-let [vector-format (vector-formats type)]
          (let [out (ByteArrayOutputStream.)]
            (VectorGraphicsEncoder/saveVectorGraphic
