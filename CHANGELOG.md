@@ -12,6 +12,8 @@
   field adapter in `com.hypirion.clj-xchart.opt`.
 - Add dependency-free optional adapters for tablecloth and tech.ml.dataset
   column sources.
+- Validate materialized declarative series lengths and numeric values, and
+  report unknown XY render-style keywords with `ex-info`.
 
 ## [0.5.0] - 2026-08-27
 

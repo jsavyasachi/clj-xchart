@@ -133,6 +133,15 @@
   (is (= {:x [1 2] :y [3 4]}
          (dataset/from-columns {:x [1 2] :y [3 4]} {:x :x :y :y}))))
 
+(deftest declarative-series-validation
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"equal lengths"
+                        (c/xy-chart {"s" {:x [1 2] :y [3]}})))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"numeric"
+                        (c/xy-chart {"s" {:x [1 2] :y ["bad" 3]}})))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unknown render style"
+                        (c/xy-chart {"s" {:x [1] :y [2]}}
+                                    {:render-style :not-a-style}))))
+
 (deftest legend-position-and-alignment
   (is (renders-all-formats?
        (c/xy-chart {"s" {:x [1 2] :y [3 4]}}

@@ -631,14 +631,45 @@
    (not (nil? y-axis-group)) (.setYAxisGroup (int y-axis-group))
    y-axis-decimal-pattern (.setYAxisDecimalPattern y-axis-decimal-pattern)))
 
+(defn- indexed-data? [value]
+  (or (vector? value)
+      (instance? java.util.List value)
+      (and value (.isArray (class value)))))
+
+(defn- data-count [value]
+  (cond
+    (instance? java.util.List value) (.size ^java.util.List value)
+    (.isArray (class value)) (java.lang.reflect.Array/getLength value)
+    :else (count value)))
+
+(defn- validate-series!
+  "Validates materialized declarative data while leaving lazy views lazy."
+  [x-data y-data]
+  (when (and (indexed-data? x-data) (indexed-data? y-data))
+    (when-not (= (data-count x-data) (data-count y-data))
+      (throw (ex-info "Series X and Y data must have equal lengths"
+                      {:x-count (data-count x-data) :y-count (data-count y-data)})))
+    (when (some #(not (number? %)) x-data)
+      (throw (ex-info "Series data must contain numeric values" {:axis :x})))
+    (when (some #(not (number? %)) y-data)
+      (throw (ex-info "Series data must contain numeric values" {:axis :y})))))
+
+(defn- style-value [table value label]
+  (if (or (nil? value) (contains? table value) (not (keyword? value)))
+    (table value)
+    (throw (ex-info (str "Unknown " label ": " value)
+                    {:value value :supported (keys table)}))))
+
 (defn- add-raw-series
   ;; addSeries is reflective because chart has several types. XChart has about
   ;; 12 addSeries overloads (double[]/float[]/int[]/List). Runtime dispatch
   ;; accepts the numeric collection passed to this function.
   ([chart s-name x-data y-data]
+   (validate-series! x-data y-data)
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data])))
   ([chart s-name x-data y-data error-bars]
+   (validate-series! x-data y-data)
    (clojure.lang.Reflector/invokeInstanceMethod
     chart "addSeries" (to-array [s-name x-data y-data error-bars]))))
 
@@ -733,7 +764,8 @@
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
          style (set-common-series-style! style)
-         render-style (.setXYSeriesRenderStyle (xy-render-styles render-style))
+         render-style (.setXYSeriesRenderStyle
+                       (style-value xy-render-styles render-style "render style"))
          marker-color (.setMarkerColor (colors marker-color marker-color))
          marker-type (.setMarker (markers marker-type marker-type))
          line-color (.setLineColor (colors line-color line-color))
@@ -766,7 +798,8 @@
      (doto-cond
       ^XYStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      render-style (.setDefaultSeriesRenderStyle (xy-render-styles render-style))
+      render-style (.setDefaultSeriesRenderStyle
+                    (style-value xy-render-styles render-style "render style"))
       styling (set-xy-style! styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
