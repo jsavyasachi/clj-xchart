@@ -6,6 +6,8 @@
 - Add stream and batch bitmap export via `to-output-stream` and collection
   input to `to-bytes`, with DPI and JPEG quality options for bitmap bytes.
 - Extend `spit` with export options while preserving its existing arities.
+- Add axis title colors, per-group Y-axis limits, Y-axis group merging, and
+  show-within-area point styling.
 
 ## [0.5.0] - 2026-08-27
 

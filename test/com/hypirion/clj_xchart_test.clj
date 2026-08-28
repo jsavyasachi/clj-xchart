@@ -228,6 +228,23 @@
     (is (= "0.00" (.getYAxisDecimalPattern series)))
     (is (.isSmooth series))))
 
+(deftest remaining-axis-styler-options
+  (let [chart (c/xy-chart {"a" {:x [1 2] :y [3 4] :style {:y-axis-group 1}}
+                           "b" {:x [1 2] :y [30 40] :style {:y-axis-group 2}}}
+                          {:x-axis {:title-color :red}
+                           :y-axis {:title-color :blue
+                                    :groups {1 {:min 0 :max 10}
+                                             2 {:min 20 :max 50}}
+                                    :merge-groups [1 2]}
+                           :show-within-area-point? true})
+        styler (.getStyler chart)]
+    (is (= (c/colors :red) (.getXAxisTitleColor styler)))
+    (is (= (c/colors :blue) (.getYAxisTitleColor styler)))
+    (is (= 10.0 (.getYAxisMax styler (int 1))))
+    (is (= 20.0 (.getYAxisMin styler (int 2))))
+    (is (= 1 (.getYAxisVisualGroup styler (int 2))))
+    (is (.getShowWithinAreaPoint styler))))
+
 (deftest explicit-series-colors
   (let [styler (.getStyler (c/xy-chart {"s" [[1] [2]]}
                                        {:series-colors [:red :blue]}))]

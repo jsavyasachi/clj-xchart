@@ -395,7 +395,7 @@
   [^Styler styler
    {:keys [annotations-font annotations? annotation anti-alias? base-font chart
            plot legend series series-colors text-anti-alias? tooltips
-           y-axis-group-positions]}]
+           y-axis-group-positions show-within-area-point?]}]
   ;; XChart 4.x changed "annotations" to "labels". It moved them from the base
   ;; Styler to the pie/category stylers. Set them there when applicable.
   (when (instance? PieStyler styler)
@@ -406,7 +406,7 @@
     (doto-cond ^CategoryStyler styler
       annotations-font (.setLabelsFont annotations-font)
       (not (nil? annotations?)) (.setLabelsVisible (boolean annotations?))))
-  (doseq [[group position] y-axis-group-positions]
+   (doseq [[group position] y-axis-group-positions]
     (.setYAxisGroupPosition styler (int group) (y-axis-positions position position)))
   (doto-cond
    styler
@@ -419,7 +419,9 @@
    series-colors (set-series-colors! series-colors)
    series (set-series-style! series)
    (not (nil? text-anti-alias?)) (.setTextAntiAlias (boolean text-anti-alias?))
-   tooltips (set-tooltips! tooltips)))
+   tooltips (set-tooltips! tooltips)
+   (not (nil? show-within-area-point?))
+   (.setShowWithinAreaPoint (boolean show-within-area-point?))))
 
 (defn- set-axis-ticks!
   [^AxesChartStyler styler
@@ -477,7 +479,7 @@
    {:keys [label logarithmic? max min decimal-pattern
            logarithmic-decade-only? max-label-count tick-label-color
            tick-label-formatter tick-mark-color tick-mark-spacing-hint
-           ticks-visible? title-visible?]}]
+           ticks-visible? title-visible? title-color]}]
   (let [{:keys [alignment rotation vertical-alignment]} label]
     (doto-cond
      styler
@@ -499,6 +501,7 @@
                          (as-java-function tick-label-formatter))
    tick-mark-color (.setXAxisTickMarksColor (colors tick-mark-color tick-mark-color))
    tick-mark-spacing-hint (.setXAxisTickMarkSpacingHint (int tick-mark-spacing-hint))
+   title-color (.setXAxisTitleColor (colors title-color title-color))
    (not (nil? ticks-visible?)) (.setXAxisTicksVisible (boolean ticks-visible?))
    (not (nil? title-visible?)) (.setXAxisTitleVisible (boolean title-visible?))))
 
@@ -506,7 +509,8 @@
   [^AxesChartStyler styler
    {:keys [label logarithmic? max min decimal-pattern
            logarithmic-decade-only? tick-label-color tick-label-formatter
-           tick-mark-color tick-mark-spacing-hint ticks-visible? title-visible?]}]
+           tick-mark-color tick-mark-spacing-hint ticks-visible? title-visible?
+           title-color groups merge-groups]}]
   (let [{:keys [alignment rotation]} label]
     (doto-cond
      styler
@@ -524,8 +528,14 @@
                          (as-java-function tick-label-formatter))
    tick-mark-color (.setYAxisTickMarksColor (colors tick-mark-color tick-mark-color))
    tick-mark-spacing-hint (.setYAxisTickMarkSpacingHint (int tick-mark-spacing-hint))
+   title-color (.setYAxisTitleColor (colors title-color title-color))
    (not (nil? ticks-visible?)) (.setYAxisTicksVisible (boolean ticks-visible?))
-   (not (nil? title-visible?)) (.setYAxisTitleVisible (boolean title-visible?))))
+   (not (nil? title-visible?)) (.setYAxisTitleVisible (boolean title-visible?)))
+  (doseq [[group {:keys [min max]}] groups]
+    (when min (.setYAxisMin styler (Integer/valueOf (int group)) (Double/valueOf (double min))))
+    (when max (.setYAxisMax styler (Integer/valueOf (int group)) (Double/valueOf (double max)))))
+  (when merge-groups
+    (.mergeYAxisGroups styler (int-array merge-groups))))
 
 (defn- set-axes-style!
   [^AxesChartStyler styler
