@@ -649,8 +649,6 @@
     (when-not (= (data-count x-data) (data-count y-data))
       (throw (ex-info "Series X and Y data must have equal lengths"
                       {:x-count (data-count x-data) :y-count (data-count y-data)})))
-    (when (some #(not (number? %)) x-data)
-      (throw (ex-info "Series data must contain numeric values" {:axis :x})))
     (when (some #(not (number? %)) y-data)
       (throw (ex-info "Series data must contain numeric values" {:axis :y})))))
 
