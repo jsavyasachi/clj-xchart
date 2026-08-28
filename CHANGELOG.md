@@ -10,6 +10,8 @@
   show-within-area point styling.
 - Add zero-copy primitive-array field views and an explicitly lazy reducible
   field adapter in `com.hypirion.clj-xchart.opt`.
+- Add dependency-free optional adapters for tablecloth and tech.ml.dataset
+  column sources.
 
 ## [0.5.0] - 2026-08-27
 

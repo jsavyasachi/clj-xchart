@@ -2,6 +2,8 @@
   (:require [clojure.test :refer :all]
             [com.hypirion.clj-xchart :as c]
             [com.hypirion.clj-xchart.opt :as opt]
+            [com.hypirion.clj-xchart.tablecloth :as tablecloth]
+            [com.hypirion.clj-xchart.tech-ml-dataset :as dataset]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -124,6 +126,12 @@
     (is (= [3] (vec (:x reduced))))
     (is (= [30] (vec (:y reduced))))
     (is (instance? java.util.List (:x series)))))
+
+(deftest optional-dataset-adapters
+  (is (= {:x [1 2] :y [3 4]}
+         (tablecloth/from-columns {:x [1 2] :y [3 4]} {:x :x :y :y})))
+  (is (= {:x [1 2] :y [3 4]}
+         (dataset/from-columns {:x [1 2] :y [3 4]} {:x :x :y :y}))))
 
 (deftest legend-position-and-alignment
   (is (renders-all-formats?
