@@ -105,6 +105,23 @@
                        {:in :max :out [20 :px]}
                        {:title "bubble" :theme :xchart}))))
 
+(deftest newer-chart-types-render-all-formats
+  (doseq [[label chart]
+          [["box" (c/box-chart {"s" [1 2 3]})]
+           ["horizontal-bar" (c/horizontal-bar-chart {"s" [[1 2] ["a" "b"]]})]
+           ["ohlc" (c/ohlc-chart {"s" {:x [1 2] :open [2 3] :high [4 5]
+                                         :low [1 2] :close [3 4]}})]
+           ["dial" (c/dial-chart {"s" {:value 0.5 :label "s"}}
+                                  {:legend {:visible? false}})]
+           ["radar" (c/radar-chart {"s" [0.2 0.4]} {:radii-labels ["a" "b"]})]
+           ["heat-map" (c/heat-map-chart {"s" {:x-labels ["x"]
+                                                  :y-labels ["y"]
+                                                  :heat-data [[1]]}}
+                                            {:locale java.util.Locale/US
+                                             :range-colors [:blue :white :red]
+                                             :font (Font. Font/SANS_SERIF Font/PLAIN 12)})]]]
+    (is (renders-all-formats? chart) label)))
+
 (deftest opt-namespace-loads-and-maps
   ;; This guards the src/java ListMapping class. The opt namespace imports it.
   ;; A build without :java-source-paths, or an uncompiled jar, fails here and in

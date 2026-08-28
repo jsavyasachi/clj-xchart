@@ -14,6 +14,7 @@
   column sources.
 - Validate materialized declarative series lengths and numeric values, and
   report unknown XY render-style keywords with `ex-info`.
+- Add headless all-format render smoke coverage for the six newer chart types.
 
 ## [0.5.0] - 2026-08-27
 
