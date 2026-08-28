@@ -1,5 +1,12 @@
 # Change Log
 
+## [Unreleased]
+
+### Added
+- Add stream and batch bitmap export via `to-output-stream` and collection
+  input to `to-bytes`, with DPI and JPEG quality options for bitmap bytes.
+- Extend `spit` with export options while preserving its existing arities.
+
 ## [0.5.0] - 2026-08-27
 
 ### Added

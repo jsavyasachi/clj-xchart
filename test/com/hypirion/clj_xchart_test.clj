@@ -59,7 +59,16 @@
                    {:title "xy" :theme :matlab :render-style :line
                     :annotations? true
                     :x-axis {:title "x" :title-style {:visible? true}}
-                    :y-axis {:title "y"}}))))
+                   :y-axis {:title "y"}}))))
+
+(deftest export-targets-and-options
+  (let [chart (c/xy-chart {"s" {:x [1 2] :y [3 4]}})
+        out (java.io.ByteArrayOutputStream.)]
+    (is (pos? (count (c/to-bytes chart :png {:dpi 144}))))
+    (is (pos? (count (c/to-bytes chart :jpg {:quality 0.4}))))
+    (is (= out (c/to-output-stream chart out :png)))
+    (is (pos? (.size out)))
+    (is (pos? (count (c/to-bytes [chart chart] :png))))))
 
 (deftest category-chart-renders
   (is (renders-all-formats?

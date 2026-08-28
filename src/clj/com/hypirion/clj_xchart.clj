@@ -75,10 +75,11 @@
            (org.knowm.xchart.style.lines SeriesLines)
            (org.knowm.xchart.internal.chartpart Annotation AxesChart)
            (org.knowm.xchart.internal.series Series)
-           (java.io ByteArrayOutputStream FileOutputStream)
+           (java.io ByteArrayOutputStream FileOutputStream OutputStream)
            (java.awt Color
                      GridLayout)
            (java.awt.image BufferedImage)
+           (javax.imageio ImageIO)
            (java.util.function Function)
            (javax.swing JPanel
                         JFrame
@@ -1237,18 +1238,89 @@
    :svg VectorGraphicsEncoder$VectorGraphicsFormat/SVG
    :eps VectorGraphicsEncoder$VectorGraphicsFormat/EPS})
 
+(defn- scaled-image [^BufferedImage image dpi]
+  (if (or (nil? dpi) (= 96 dpi))
+    image
+    (let [scale (/ (double dpi) 96.0)
+          width (int (* scale (.getWidth image)))
+          height (int (* scale (.getHeight image)))
+          scaled (BufferedImage. width height BufferedImage/TYPE_INT_ARGB)
+          graphics (.createGraphics scaled)]
+      (try
+        (.drawImage graphics image 0 0 width height nil)
+        scaled
+        (finally (.dispose graphics))))))
+
+(defn- write-image-bytes [^BufferedImage image format quality]
+  (let [out (ByteArrayOutputStream.)]
+    (if (nil? quality)
+      (ImageIO/write image format out)
+      (let [writer (first (iterator-seq (ImageIO/getImageWritersByFormatName format)))]
+        (when-not writer
+          (throw (IllegalArgumentException. (str "No ImageIO writer for " format))))
+        (let [image-out (ImageIO/createImageOutputStream out)
+              params (.getDefaultWriteParam writer)]
+          (try
+            (.setOutput writer image-out)
+            (when (.canWriteCompressed params)
+              (.setCompressionMode params javax.imageio.ImageWriteParam/MODE_EXPLICIT)
+              (.setCompressionQuality params (float quality)))
+            (.write writer nil (javax.imageio.IIOImage. image nil nil) params)
+            (finally
+              (.dispose writer)
+              (.close image-out))))))
+    (.toByteArray out)))
+
+(defn- bitmap-bytes [chart type {:keys [dpi quality]}]
+  (let [format (name type)]
+    (if (nil? dpi)
+      (if quality
+        (write-image-bytes (as-buffered-image chart) format quality)
+        (BitmapEncoder/getBitmapBytes chart (bitmap-formats type)))
+      (write-image-bytes (scaled-image (as-buffered-image chart) dpi)
+                         format quality))))
+
+(defn to-output-stream
+  "Writes one chart, or a collection of charts, to an OutputStream.
+  Batch output is supported for bitmap formats; :rows and :columns control
+  the layout. The stream remains open."
+  ([chart-or-charts out type]
+   (to-output-stream chart-or-charts out type {}))
+  ([chart-or-charts ^OutputStream out type {:keys [rows columns]}]
+   (when-not (bitmap-formats type)
+     (throw (IllegalArgumentException. "OutputStream targets support bitmap formats only")))
+   (if (sequential? chart-or-charts)
+     (let [charts (java.util.ArrayList. chart-or-charts)
+           count-charts (.size charts)
+           rows (int (or rows 1))
+           columns (int (or columns (Math/ceil (/ count-charts (double rows)))))]
+       (BitmapEncoder/saveBitmap charts rows columns out (bitmap-formats type)))
+     (BitmapEncoder/saveBitmap chart-or-charts out (bitmap-formats type)))
+   out))
+
 (defn to-bytes
-  "Converts a chart into a byte array."
-  ([chart type]
-   (if-let [bitmap-format (bitmap-formats type)]
-     (BitmapEncoder/getBitmapBytes chart bitmap-format)
-     (if-let [vector-format (vector-formats type)]
-       (let [out (ByteArrayOutputStream.)]
-         (VectorGraphicsEncoder/saveVectorGraphic
-          ^org.knowm.xchart.internal.chartpart.Chart chart out
-          ^VectorGraphicsEncoder$VectorGraphicsFormat vector-format)
-         (.toByteArray out))
-       (throw (IllegalArgumentException. (str "Unknown format: " type)))))))
+  "Converts a chart into a byte array. Options support :dpi and :quality for
+  bitmap output. A sequential collection produces a batch bitmap." 
+  ([chart-or-charts type]
+   (to-bytes chart-or-charts type {}))
+  ([chart-or-charts type opts]
+   (if (and (sequential? chart-or-charts) (not (:dpi opts)) (not (:quality opts)))
+     (let [out (ByteArrayOutputStream.)]
+       (to-output-stream chart-or-charts out type opts)
+       (.toByteArray out))
+     (if-let [bitmap-format (bitmap-formats type)]
+       (if (and (= type :jpg) (:quality opts))
+         ;; XChart exposes quality only for file targets. ImageIO's default
+         ;; writer is still a valid, deterministic stream target.
+         (bitmap-bytes chart-or-charts type opts)
+         (bitmap-bytes chart-or-charts type opts))
+       (if-let [vector-format (vector-formats type)]
+         (let [out (ByteArrayOutputStream.)]
+           (VectorGraphicsEncoder/saveVectorGraphic
+            ^org.knowm.xchart.internal.chartpart.Chart chart-or-charts out
+            ^VectorGraphicsEncoder$VectorGraphicsFormat vector-format)
+           (.toByteArray out))
+         (throw (IllegalArgumentException. (str "Unknown format: " type))))))))
 
 (defn view
   "Utility function to render one or more charts in a swing frame."
@@ -1281,8 +1353,10 @@
   ([chart fname]
    (spit chart fname (guess-extension fname)))
   ([chart fname type]
+   (spit chart fname type {}))
+  ([chart fname type opts]
    (with-open [fos (FileOutputStream. ^String fname)]
-     (.write fos ^bytes (to-bytes chart type)))))
+     (.write fos ^bytes (to-bytes chart type opts)))))
 
 (defn- transpose-single
   [acc k1 v1]
