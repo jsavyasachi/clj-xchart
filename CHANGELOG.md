@@ -8,6 +8,8 @@
 - Extend `spit` with export options while preserving its existing arities.
 - Add axis title colors, per-group Y-axis limits, Y-axis group merging, and
   show-within-area point styling.
+- Add zero-copy primitive-array field views and an explicitly lazy reducible
+  field adapter in `com.hypirion.clj-xchart.opt`.
 
 ## [0.5.0] - 2026-08-27
 

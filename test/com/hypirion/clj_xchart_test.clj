@@ -114,6 +114,17 @@
     ;; The lazy view must render through a real chart end to end.
     (is (pos? (count (c/to-bytes (c/xy-chart {"s" series}) :png))))))
 
+(deftest opt-zero-copy-adapters
+  (let [rows (object-array [{:x 1 :y 10} {:x 2 :y 20}])
+        series (opt/extract-array-series {:x :x :y :y} rows)
+        reduced (opt/extract-reducible-series {:x :x :y :y}
+                                               (eduction (map identity) [{:x 3 :y 30}]))]
+    (is (= [1 2] (vec (:x series))))
+    (is (= [10 20] (vec (:y series))))
+    (is (= [3] (vec (:x reduced))))
+    (is (= [30] (vec (:y reduced))))
+    (is (instance? java.util.List (:x series)))))
+
 (deftest legend-position-and-alignment
   (is (renders-all-formats?
        (c/xy-chart {"s" {:x [1 2] :y [3 4]}}
