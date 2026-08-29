@@ -1,5 +1,5 @@
 (ns com.hypirion.clj-xchart-ohlc-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [com.hypirion.clj-xchart :as c])
   (:import (org.knowm.xchart OHLCChart OHLCSeries)
            (org.knowm.xchart.style OHLCStyler)))

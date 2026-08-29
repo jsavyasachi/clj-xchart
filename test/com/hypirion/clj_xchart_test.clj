@@ -1,10 +1,9 @@
 (ns com.hypirion.clj-xchart-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [com.hypirion.clj-xchart :as c]
             [com.hypirion.clj-xchart.opt :as opt]
             [com.hypirion.clj-xchart.tablecloth :as tablecloth]
             [com.hypirion.clj-xchart.tech-ml-dataset :as dataset]
-            [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.test.check.clojure-test :refer [defspec]])

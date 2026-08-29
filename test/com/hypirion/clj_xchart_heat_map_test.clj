@@ -1,5 +1,5 @@
 (ns com.hypirion.clj-xchart-heat-map-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [com.hypirion.clj-xchart :as c])
   (:import (java.awt Font)
            (org.knowm.xchart HeatMapChart HeatMapSeries)

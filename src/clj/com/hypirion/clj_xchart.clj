@@ -265,8 +265,14 @@
         expr-sym (with-meta (gensym "expr") (meta expr))]
     `(let [~expr-sym ~expr]
        ~@(map (fn [[cond clause]]
+        (let [call (if (and (symbol? (first clause))
+                            (not (s/starts-with? (name (first clause)) ".")))
+                           (if (= :target (second clause))
+                             (list* (first clause) expr-sym (nnext clause))
+                             clause)
+                           (cons (first clause) (cons expr-sym (rest clause))))]
                 `(when ~cond
-                   (~(first clause) ~expr-sym ~@(rest clause))))
+                   (~@call))))
               pairs)
        ~expr-sym)))
 
@@ -309,7 +315,7 @@
    background-color (.setChartBackgroundColor (colors background-color background-color))
    font-color (.setChartFontColor (colors font-color font-color))
    padding (.setChartPadding (int padding))
-   title (set-chart-title-style! title)))
+   title (set-chart-title-style! styler title)))
 
 (defn- set-plot-style!
   [^Styler styler
@@ -410,16 +416,16 @@
     (.setYAxisGroupPosition styler (int group) (y-axis-positions position position)))
   (doto-cond
    styler
-   annotation (set-annotation-style! annotation)
+   annotation (set-annotation-style! styler annotation)
    (not (nil? anti-alias?)) (.setAntiAlias (boolean anti-alias?))
    base-font (.setBaseFont base-font)
-   chart (set-chart-style! chart)
-   legend (set-legend! legend)
-   plot (set-plot-style! plot)
-   series-colors (set-series-colors! series-colors)
-   series (set-series-style! series)
+   chart (set-chart-style! styler chart)
+   legend (set-legend! styler legend)
+   plot (set-plot-style! styler plot)
+   series-colors (set-series-colors! styler series-colors)
+   series (set-series-style! styler series)
    (not (nil? text-anti-alias?)) (.setTextAntiAlias (boolean text-anti-alias?))
-   tooltips (set-tooltips! tooltips)
+   tooltips (set-tooltips! styler tooltips)
    (not (nil? show-within-area-point?))
    (.setShowWithinAreaPoint (boolean show-within-area-point?))))
 
@@ -469,8 +475,8 @@
    margin (.setPlotMargin (int margin))
    (not (nil? tick-marks?)) (.setPlotTicksMarksVisible (boolean tick-marks?))))
 
-(defn- ^Function as-java-function
-  [f]
+(defn- as-java-function
+  ^Function [f]
   (reify Function
     (apply [_ value] (f value))))
 
@@ -511,7 +517,7 @@
            logarithmic-decade-only? tick-label-color tick-label-formatter
            tick-mark-color tick-mark-spacing-hint ticks-visible? title-visible?
            title-color groups merge-groups]}]
-  (let [{:keys [alignment rotation]} label]
+  (let [{:keys [alignment]} label]
     (doto-cond
      styler
      alignment (.setYAxisLabelAlignment (text-alignments alignment alignment))))
@@ -546,8 +552,8 @@
         {marker-size :size} marker]
     (doto-cond
      styler
-     axis-ticks (set-axis-ticks! axis-ticks)
-     axis-title (set-axis-title! axis-title)
+     axis-ticks (set-axis-ticks! styler axis-ticks)
+     axis-title (set-axis-title! styler axis-title)
      date-pattern (.setDatePattern date-pattern)
      decimal-pattern (.setDecimalPattern decimal-pattern)
      ;; You can set a color for error bars. If the color is :match-series, it
@@ -557,10 +563,10 @@
      (= ebc :match-series) (.setErrorBarsColorSeriesColor true)
      locale (.setLocale locale)
      marker-size (.setMarkerSize marker-size)
-     plot (set-axis-plot! plot)
+     plot (set-axis-plot! styler plot)
      timezone (.setTimezone timezone)
-     x-axis (set-x-axis-style! x-axis)
-     y-axis (set-y-axis-style! y-axis))))
+     x-axis (set-x-axis-style! styler x-axis)
+     y-axis (set-y-axis-style! styler y-axis))))
 
 (defn- set-xy-style!
   [^XYStyler styler {:keys [cursor]}]
@@ -699,8 +705,8 @@
         (assoc-in-nonexisting [:chart :title :font] font))
     style-map))
 
-(defn- ^Annotation annotation-object
-  [{:keys [type text lines image x y value orientation vertical?
+(defn- annotation-object
+  ^Annotation [{:keys [type text lines image x y value orientation vertical?
            coordinate-space screen-space?]
     :as annotation}]
   (if (instance? Annotation annotation)
@@ -761,7 +767,7 @@
          (if error-bars
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          render-style (.setXYSeriesRenderStyle
                        (style-value xy-render-styles render-style "render style"))
          marker-color (.setMarkerColor (colors marker-color marker-color))
@@ -798,7 +804,7 @@
       theme (.setTheme (themes theme theme))
       render-style (.setDefaultSeriesRenderStyle
                     (style-value xy-render-styles render-style "render style"))
-      styling (set-xy-style! styling))
+      styling (set-xy-style! :target styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto (.getStyler chart)
@@ -809,7 +815,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 ;; Box charts
 
@@ -837,7 +843,7 @@
           {:keys [fill-color show-in-legend?]} style]
       (doto-cond
        ^BoxSeries (.addSeries chart ^String s-name ^java.util.List (vec values))
-       style (set-common-series-style! style)
+       style (set-common-series-style! :target style)
        fill-color (.setFillColor (colors fill-color fill-color))
        (not (nil? show-in-legend?))
        (.setShowInLegend (boolean show-in-legend?)))))
@@ -862,7 +868,7 @@
          styling (attach-default-font styling)]
      (doto-cond
       ^BoxStyler (.getStyler chart)
-      styling (set-box-style! styling))
+      styling (set-box-style! :target styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto (.getStyler chart)
@@ -873,7 +879,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 ;; Horizontal bar charts
 
@@ -904,7 +910,7 @@
        ^HorizontalBarSeries
        (.addSeries chart ^String s-name
                    ^java.util.List (vec x) ^java.util.List (vec y))
-       style (set-common-series-style! style)
+       style (set-common-series-style! :target style)
        fill-color (.setFillColor (colors fill-color fill-color))
        (not (nil? show-in-legend?))
        (.setShowInLegend (boolean show-in-legend?)))))
@@ -932,7 +938,7 @@
      (doto-cond
       ^HorizontalBarStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      styling (set-horizontal-bar-style! styling))
+      styling (set-horizontal-bar-style! :target styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto (.getStyler chart)
@@ -943,7 +949,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 (extend-type CategoryChart
   Chart
@@ -959,7 +965,7 @@
          (if error-bars
            (add-raw-series chart s-name x y error-bars)
            (add-raw-series chart s-name x y))
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          render-style (.setChartCategorySeriesRenderStyle (category-render-styles render-style))
          marker-color (.setMarkerColor (colors marker-color marker-color))
          marker-type (.setMarker (markers marker-type marker-type))
@@ -1000,7 +1006,7 @@
       available-space-fill (.setAvailableSpaceFill (double available-space-fill))
       (not (nil? overlap?)) (.setOverlapped (boolean overlap?))
       (not (nil? stacked?)) (.setStacked (boolean stacked?))
-      styling (set-category-style! styling))
+      styling (set-category-style! :target styling))
      (doto (.getStyler chart)
        (set-default-style! styling)
        (set-axes-style! styling))
@@ -1009,7 +1015,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 ;; Utility functions
 
@@ -1098,12 +1104,11 @@
     (if (sequential? data)
       (apply add-raw-series chart s-name data)
       (let [{:keys [x y bubble style]} data
-            {:keys [marker-color marker-type
-                    line-color line-style line-width
+            {:keys [line-color line-style line-width
                     fill-color show-in-legend? render-style]} style]
         (doto-cond
          ^BubbleSeries (add-raw-series chart s-name x y bubble)
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          ;; NOTE: Add the render style when the implementation adds squares.
          render-style (.setBubbleSeriesRenderStyle (bubble-render-styles render-style))
          line-color (.setLineColor (colors line-color line-color))
@@ -1145,7 +1150,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 (defn- max-bubble-value [series]
   (reduce max
@@ -1211,7 +1216,7 @@
             val (:value data)]
         (doto-cond
          (.addSeries chart s-name val)
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          render-style (.setChartPieSeriesRenderStyle (pie-render-styles render-style))
          fill-color (.setFillColor (colors fill-color fill-color))
          (not (nil? show-in-legend?)) (.setShowInLegend (boolean show-in-legend?))))))
@@ -1231,7 +1236,7 @@
   ([series]
    (pie-chart series {}))
   ([series
-    {:keys [width height title circular? theme render-style annotation-distance
+    {:keys [width height title circular? theme render-style
             start-angle draw-all-annotations? donut-thickness annotation-type]
      :or {width 640 height 500}
      :as styling}]
@@ -1255,7 +1260,7 @@
       donut-thickness (.setDonutThickness (double donut-thickness))
       start-angle (.setStartAngleInDegrees (double start-angle))
       annotation-type (.setLabelType (pie-annotation-types annotation-type))
-      styling (set-pie-style! styling))
+      styling (set-pie-style! :target styling))
      (set-default-style! (.getStyler chart) styling)
      ;; Pie charts have no axes in XChart 4.x. They take only a title.
      (doto-cond
@@ -1381,7 +1386,7 @@
 
 (defn- guess-extension
   [fname]
-  (if-let [last-dot (s/last-index-of fname ".")]
+  (when-let [last-dot (s/last-index-of fname ".")]
     (let [extension (s/lower-case (subs fname (inc last-dot)))]
       (keyword extension))))
 
@@ -1435,7 +1440,7 @@
 
 ;; OHLC charts
 
-(defn- ^OHLCSeries add-ohlc-raw-series
+(defn- add-ohlc-raw-series
   ;; addSeries is reflective so XChart can dispatch its primitive-array and List
   ;; overloads for each supported OHLC data shape.
   [^OHLCChart chart s-name & data]
@@ -1502,7 +1507,7 @@
          :ohlc (add-ohlc-raw-series chart s-name open high low close)
          :x-ohlc (add-ohlc-raw-series chart s-name x open high low close)
          :x-ohlcv (add-ohlc-raw-series chart s-name x open high low close volume))
-       style (set-common-series-style! style)
+       style (set-common-series-style! :target style)
        render-style (.setOhlcSeriesRenderStyle
                      (ohlc-render-styles render-style))
        up-color (.setUpColor (colors up-color up-color))
@@ -1542,7 +1547,7 @@
      (doto-cond
       ^OHLCStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      styling (set-ohlc-style! styling))
+      styling (set-ohlc-style! :target styling))
      (doseq [[s-name data] series]
        (add-series! chart s-name data))
      (doto (.getStyler chart)
@@ -1553,7 +1558,7 @@
       title (.setTitle title)
       (-> styling :x-axis :title) (.setXAxisTitle (-> styling :x-axis :title))
       (-> styling :y-axis :title) (.setYAxisTitle (-> styling :y-axis :title))
-      annotations (add-annotations! annotations)))))
+      annotations (add-annotations! chart annotations)))))
 
 
 ;; Dial charts
@@ -1618,7 +1623,7 @@
          (if label
            (.addSeries chart s-name (double value) label)
            (.addSeries chart s-name (double value)))
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          fill-color (.setFillColor (colors fill-color fill-color))
          (not (nil? show-in-legend?))
          (.setShowInLegend (boolean show-in-legend?))))))
@@ -1644,7 +1649,7 @@
      (doto-cond
       ^DialStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      styling (set-dial-style! styling))
+      styling (set-dial-style! :target styling))
      (set-default-style! (.getStyler chart) styling)
      (doto-cond
       chart
@@ -1692,7 +1697,7 @@
            (.addSeries chart s-name (double-array values)
                        (into-array String tooltips))
            (.addSeries chart s-name (double-array values)))
-         style (set-common-series-style! style)
+         style (set-common-series-style! :target style)
          fill-color (.setFillColor (colors fill-color fill-color))
          line-color (.setLineColor ^Color (colors line-color line-color))
          line-style (.setLineStyle ^java.awt.BasicStroke
@@ -1723,7 +1728,7 @@
      (doto-cond
       ^RadarStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      styling (set-radar-style! styling))
+      styling (set-radar-style! :target styling))
      (set-default-style! (.getStyler chart) styling)
      (doto-cond
       chart
@@ -1825,7 +1830,8 @@
                      ^java.util.List (vec x-labels)
                      ^java.util.List (vec y-labels)
                      ^java.util.List (coerce-heat-data x-labels y-labels heat-data))
-      (.getSeries chart s-name))))
+      (let [^HeatMapSeries series (.getSeries chart s-name)]
+        series))))
 
 (defn heat-map-chart
   "Returns a heat map chart. The series map must contain exactly one named
@@ -1846,7 +1852,7 @@
      (doto-cond
       ^HeatMapStyler (.getStyler chart)
       theme (.setTheme (themes theme theme))
-      styling (set-heat-map-style! styling))
+      styling (set-heat-map-style! :target styling))
      (let [[s-name data] (first series)]
        (add-series! chart s-name data))
      (doto (.getStyler chart)
