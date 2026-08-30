@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-30
+
+### Fixed
+
+- Correct the README's XChart version badge and chart-type note, which said 4.0.3
+  while the library depends on 4.0.4.
+
+
 ## [0.6.0] - 2026-08-27
 
 ### Added

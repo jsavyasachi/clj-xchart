@@ -49,13 +49,13 @@ Existing constructors and keyword-based styling stay compatible.
 Leiningen/Boot:
 
 ```clj
-[net.clojars.savya/clj-xchart "0.6.0"]
+[net.clojars.savya/clj-xchart "0.6.1"]
 ```
 
 deps.edn:
 
 ```clj
-net.clojars.savya/clj-xchart {:mvn/version "0.6.0"}
+net.clojars.savya/clj-xchart {:mvn/version "0.6.1"}
 ```
 
 ## Usage
