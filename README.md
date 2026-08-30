@@ -18,11 +18,11 @@ library for rendering charts/plots.
 <a href="https://clojure.org"><img src="https://img.shields.io/badge/Clojure-5881D8?style=flat&logo=clojure&logoColor=fff" alt="Clojure" /></a>
 <a href="https://clojure.org/guides/deps_and_cli"><img src="https://img.shields.io/badge/deps.edn-5881D8?style=flat&logo=clojure&logoColor=fff" alt="deps.edn" /></a>
 <a href="https://clojure.github.io/tools.build/"><img src="https://img.shields.io/badge/tools.build-5881D8?style=flat&logo=clojure&logoColor=fff" alt="tools.build" /></a>
-<a href="https://knowm.org/open-source/xchart/"><img src="https://img.shields.io/badge/XChart-4.0.3-4A86E8?style=flat" alt="XChart" /></a>
+<a href="https://knowm.org/open-source/xchart/"><img src="https://img.shields.io/badge/XChart-4.0.4-4A86E8?style=flat" alt="XChart" /></a>
 
 ## What
 
-The constructors cover XChart 4.0.3's full chart-type set:
+The constructors cover XChart 4.0.4's full chart-type set:
 
 * XY charts: line, scatter, area, step, step-area, and polygon-area
 * Category charts: bar, stepped-bar, line, area, scatter, and stick
