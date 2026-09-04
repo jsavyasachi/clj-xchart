@@ -2,7 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.savya/clj-xchart.svg)](https://clojars.org/net.clojars.savya/clj-xchart)
 [![cljdoc](https://cljdoc.org/badge/net.clojars.savya/clj-xchart)](https://cljdoc.org/d/net.clojars.savya/clj-xchart/CURRENT)
-[![test](https://github.com/jsavyasachi/clj-xchart/actions/workflows/test.yml/badge.svg)](https://github.com/jsavyasachi/clj-xchart/actions/workflows/test.yml)
+[![test](https://github.com/savyalabs/clj-xchart/actions/workflows/test.yml/badge.svg)](https://github.com/savyalabs/clj-xchart/actions/workflows/test.yml)
 
 Clojure wrapper around [XChart](https://knowm.org/open-source/xchart/), a small
 library for rendering charts/plots.
@@ -62,9 +62,9 @@ net.clojars.savya/clj-xchart {:mvn/version "0.6.1"}
 
 The [examples page](https://hypirion.github.io/clj-xchart/examples) shows many
 examples, and
-[the tutorial](https://github.com/jsavyasachi/clj-xchart/blob/main/docs/tutorial.md)
+[the tutorial](https://github.com/savyalabs/clj-xchart/blob/main/docs/tutorial.md)
 covers basic usage. For more advanced customisation, see the
-[render options](https://github.com/jsavyasachi/clj-xchart/blob/main/docs/render-options.md)
+[render options](https://github.com/savyalabs/clj-xchart/blob/main/docs/render-options.md)
 page.
 
 ```clj

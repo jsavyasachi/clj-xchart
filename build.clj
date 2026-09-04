@@ -35,12 +35,12 @@
                 :version version
                 :basis @basis
                 :src-dirs ["src/clj"]
-                :scm {:url "https://github.com/jsavyasachi/clj-xchart"
-                      :connection "scm:git:https://github.com/jsavyasachi/clj-xchart.git"
-                      :developerConnection "scm:git:ssh://git@github.com/jsavyasachi/clj-xchart.git"
+                :scm {:url "https://github.com/savyalabs/clj-xchart"
+                      :connection "scm:git:https://github.com/savyalabs/clj-xchart.git"
+                      :developerConnection "scm:git:ssh://git@github.com/savyalabs/clj-xchart.git"
                       :tag (str "v" version)}
                 :pom-data [[:description "Idiomatic Clojure wrapper for the XChart charting library."]
-                           [:url "https://github.com/jsavyasachi/clj-xchart"]
+                           [:url "https://github.com/savyalabs/clj-xchart"]
                            [:licenses
                             [:license
                              [:name "Eclipse Public License 1.0"]

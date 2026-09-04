@@ -134,4 +134,4 @@ keyword-based chart API.
 - The empty `:java-source-paths` build configuration.
 - Axis titles on pie charts (XChart 4.x removed them; pie charts have no axes).
 
-[0.3.0]: https://github.com/jsavyasachi/clj-xchart/releases/tag/0.3.0
+[0.3.0]: https://github.com/savyalabs/clj-xchart/releases/tag/0.3.0
